@@ -10,7 +10,7 @@ const mapHtml = `
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>
-    html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; }
+    html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
   </style>
 </head>
 <body>
@@ -68,6 +68,52 @@ const mapHtml = `
         sort: kakao.maps.services.SortBy.DISTANCE
       });
     }
+
+    function searchKeyword(keyword) {
+      places.keywordSearch(keyword, function(result, status) {
+        clearMarkers();
+        if (status === kakao.maps.services.Status.OK) {
+          var bounds = new kakao.maps.LatLngBounds();
+          var placeList = result.map(function(place) {
+            var position = new kakao.maps.LatLng(place.y, place.x);
+            var marker = new kakao.maps.Marker({
+              position: position,
+              map: map
+            });
+            markers.push(marker);
+            bounds.extend(position);
+            return {
+              name: place.place_name,
+              address: place.road_address_name || place.address_name,
+              category: place.category_name,
+              phone: place.phone,
+              lat: place.y,
+              lng: place.x
+            };
+          });
+          map.setBounds(bounds);
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'PLACES_RESULT',
+            category: 'SEARCH',
+            places: placeList
+          }));
+        } else {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'PLACES_RESULT',
+            category: 'SEARCH',
+            places: []
+          }));
+        }
+      });
+    }
+
+    function zoomIn() {
+      map.setLevel(map.getLevel() - 1);
+    }
+
+    function zoomOut() {
+      map.setLevel(map.getLevel() + 1);
+    }
   </script>
 </body>
 </html>
@@ -75,6 +121,9 @@ const mapHtml = `
 
 export interface KakaoMapViewHandle {
   searchCategory: (code: string) => void;
+  searchKeyword: (keyword: string) => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
 }
 
 interface Props {
@@ -86,7 +135,16 @@ function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) 
 
   useImperativeHandle(ref, () => ({
     searchCategory: (code: string) => {
-      webViewRef.current?.injectJavaScript(`searchCategory('${code}'); true;`);
+      webViewRef.current?.injectJavaScript(`searchCategory(${JSON.stringify(code)}); true;`);
+    },
+    searchKeyword: (keyword: string) => {
+      webViewRef.current?.injectJavaScript(`searchKeyword(${JSON.stringify(keyword)}); true;`);
+    },
+    zoomIn: () => {
+      webViewRef.current?.injectJavaScript('zoomIn(); true;');
+    },
+    zoomOut: () => {
+      webViewRef.current?.injectJavaScript('zoomOut(); true;');
     },
   }));
 
@@ -97,6 +155,9 @@ function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) 
       source={{ html: mapHtml, baseUrl: 'https://localhost' }}
       style={styles.map}
       onMessage={onMessage}
+      scrollEnabled={false}
+      bounces={false}
+      overScrollMode="never"
     />
   );
 }
