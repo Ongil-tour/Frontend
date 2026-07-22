@@ -1,7 +1,7 @@
 export interface AccessibilityInfo {
   wheelchair: boolean;
   elevator: boolean;
-  brailleBlock: boolean;
+  brailleBlock: boolean;    
   accessibleParking: boolean;
   accessibleRestroom: boolean;
 }
@@ -15,4 +15,15 @@ export interface Place {
   lng: number;
   distance?: number;
   accessibility: AccessibilityInfo;
+}
+
+export interface KakaoPlace {
+  id: string;
+  name: string;
+  category: string;
+  address: string;
+  phone: string;
+  lat: number;
+  lng: number;
+  distance: number | null;
 }

@@ -30,26 +30,41 @@ const mapHtml = `
       markers = [];
     }
 
+    function toPlaceData(place) {
+      return {
+        id: place.id,
+        name: place.place_name,
+        address: place.road_address_name || place.address_name,
+        category: place.category_name,
+        phone: place.phone,
+        lat: place.y,
+        lng: place.x,
+        distance: place.distance ? Math.round((place.distance / 1000) * 10) / 10 : null
+      };
+    }
+
+    function addMarker(place) {
+      var data = toPlaceData(place);
+      var marker = new kakao.maps.Marker({
+        position: new kakao.maps.LatLng(place.y, place.x),
+        map: map
+      });
+      kakao.maps.event.addListener(marker, 'click', function() {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'MARKER_CLICK',
+          place: data
+        }));
+      });
+      markers.push(marker);
+      return data;
+    }
+
     function searchCategory(code) {
       var center = map.getCenter();
       places.categorySearch(code, function(result, status) {
         clearMarkers();
         if (status === kakao.maps.services.Status.OK) {
-          var placeList = result.map(function(place) {
-            var marker = new kakao.maps.Marker({
-              position: new kakao.maps.LatLng(place.y, place.x),
-              map: map
-            });
-            markers.push(marker);
-            return {
-              name: place.place_name,
-              address: place.road_address_name || place.address_name,
-              category: place.category_name,
-              phone: place.phone,
-              lat: place.y,
-              lng: place.x
-            };
-          });
+          var placeList = result.map(addMarker);
           window.ReactNativeWebView.postMessage(JSON.stringify({
             type: 'PLACES_RESULT',
             category: code,
@@ -75,21 +90,8 @@ const mapHtml = `
         if (status === kakao.maps.services.Status.OK) {
           var bounds = new kakao.maps.LatLngBounds();
           var placeList = result.map(function(place) {
-            var position = new kakao.maps.LatLng(place.y, place.x);
-            var marker = new kakao.maps.Marker({
-              position: position,
-              map: map
-            });
-            markers.push(marker);
-            bounds.extend(position);
-            return {
-              name: place.place_name,
-              address: place.road_address_name || place.address_name,
-              category: place.category_name,
-              phone: place.phone,
-              lat: place.y,
-              lng: place.x
-            };
+            bounds.extend(new kakao.maps.LatLng(place.y, place.x));
+            return addMarker(place);
           });
           map.setBounds(bounds);
           window.ReactNativeWebView.postMessage(JSON.stringify({

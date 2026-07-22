@@ -1,7 +1,10 @@
 import { useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import BottomSheet from '@gorhom/bottom-sheet';
 import KakaoMapView, { KakaoMapViewHandle } from '../../components/map/KakaoMapView';
+import PlacePreviewCard from '../../components/map/PlacePreviewCard';
+import { KakaoPlace } from '../../types/place';
 
 const CATEGORIES = [
   { label: '음식점', code: 'FD6' },
@@ -19,15 +22,21 @@ const RESULT_LABELS: Record<string, string> = {
 
 export default function MapScreen() {
   const mapRef = useRef<KakaoMapViewHandle>(null);
+  const previewSheetRef = useRef<BottomSheet>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [places, setPlaces] = useState<any[]>([]);
+  const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
 
   const handleMessage = (event: any) => {
     const data = JSON.parse(event.nativeEvent.data);
     if (data.type === 'PLACES_RESULT') {
       setSelectedCategory(data.category);
       setPlaces(data.places);
+    }
+    if (data.type === 'MARKER_CLICK') {
+      setSelectedPlace(data.place);
+      previewSheetRef.current?.expand();
     }
   };
 
@@ -38,6 +47,11 @@ export default function MapScreen() {
   const handleSearchSubmit = () => {
     if (!searchQuery.trim()) return;
     mapRef.current?.searchKeyword(searchQuery.trim());
+  };
+
+  const handleDetailPress = (place: KakaoPlace) => {
+    // TODO(Phase 2): navigate to PlaceDetailScreen once it's wired up
+    console.log('상세보기 요청:', place.name);
   };
 
   return (
@@ -89,6 +103,12 @@ export default function MapScreen() {
             </Text>
           </View>
         ) : null}
+        <PlacePreviewCard
+          ref={previewSheetRef}
+          place={selectedPlace}
+          onDetailPress={handleDetailPress}
+          onClose={() => setSelectedPlace(null)}
+        />
       </View>
     </SafeAreaView>
   );
