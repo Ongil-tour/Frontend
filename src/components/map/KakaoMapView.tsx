@@ -26,6 +26,7 @@ const mapHtml = `
     var geocoder = new kakao.maps.services.Geocoder();
     var markers = [];
     var clickMarker = null;
+    var currentLocationOverlay = null;
 
     function clearMarkers() {
       markers.forEach(function(m) { m.setMap(null); });
@@ -119,6 +120,20 @@ const mapHtml = `
       map.setLevel(map.getLevel() + 1);
     }
 
+    function showCurrentLocation(lat, lng) {
+      var position = new kakao.maps.LatLng(lat, lng);
+      if (currentLocationOverlay) {
+        currentLocationOverlay.setMap(null);
+      }
+      currentLocationOverlay = new kakao.maps.CustomOverlay({
+        position: position,
+        content: '<div style="width:16px;height:16px;border-radius:50%;background:#4285F4;border:3px solid white;box-shadow:0 0 0 2px rgba(66,133,244,0.35),0 1px 4px rgba(0,0,0,0.35);"></div>',
+        zIndex: 10
+      });
+      currentLocationOverlay.setMap(map);
+      map.setCenter(position);
+    }
+
     var CLICK_CATEGORY_CODES = [
       'MT1', 'CS2', 'PS3', 'SC4', 'AC5', 'PK6', 'OL7', 'SW8', 'BK9',
       'CT1', 'AG2', 'PO3', 'AT4', 'AD5', 'FD6', 'CE7', 'HP8', 'PM9'
@@ -206,6 +221,7 @@ export interface KakaoMapViewHandle {
   searchKeyword: (keyword: string) => void;
   zoomIn: () => void;
   zoomOut: () => void;
+  showCurrentLocation: (lat: number, lng: number) => void;
 }
 
 interface Props {
@@ -227,6 +243,9 @@ function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) 
     },
     zoomOut: () => {
       webViewRef.current?.injectJavaScript('zoomOut(); true;');
+    },
+    showCurrentLocation: (lat: number, lng: number) => {
+      webViewRef.current?.injectJavaScript(`showCurrentLocation(${lat}, ${lng}); true;`);
     },
   }));
 

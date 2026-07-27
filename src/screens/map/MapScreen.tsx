@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomSheet from '@gorhom/bottom-sheet';
 import KakaoMapView, { KakaoMapViewHandle } from '../../components/map/KakaoMapView';
 import PlacePreviewCard from '../../components/map/PlacePreviewCard';
+import { useCurrentLocation } from '../../hooks/useCurrentLocation';
 import { KakaoPlace } from '../../types/place';
 
 const CATEGORIES = [
@@ -27,6 +28,7 @@ export default function MapScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [places, setPlaces] = useState<any[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
+  const { getCurrentLocation } = useCurrentLocation();
 
   const handleMessage = (event: any) => {
     const data = JSON.parse(event.nativeEvent.data);
@@ -52,6 +54,15 @@ export default function MapScreen() {
   const handleDetailPress = (place: KakaoPlace) => {
     // TODO(Phase 2): navigate to PlaceDetailScreen once it's wired up
     console.log('상세보기 요청:', place.name);
+  };
+
+  const handleLocatePress = async () => {
+    const coords = await getCurrentLocation();
+    if (!coords) {
+      Alert.alert('위치 권한 필요', '설정에서 위치 권한을 허용해주세요.');
+      return;
+    }
+    mapRef.current?.showCurrentLocation(coords.lat, coords.lng);
   };
 
   return (
@@ -96,6 +107,9 @@ export default function MapScreen() {
             <Text style={styles.zoomButtonText}>−</Text>
           </TouchableOpacity>
         </View>
+        <TouchableOpacity style={styles.locateButton} onPress={handleLocatePress}>
+          <Text style={styles.locateButtonText}>◎</Text>
+        </TouchableOpacity>
         {selectedCategory ? (
           <View style={styles.infoBox}>
             <Text style={styles.countText}>
@@ -180,6 +194,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#e5e5e5',
     marginHorizontal: 8,
   },
+  locateButton: {
+    position: 'absolute',
+    top: 108,
+    right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'white',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  locateButtonText: { fontSize: 20, color: '#3B82F6' },
   infoBox: {
     position: 'absolute',
     bottom: 30,
