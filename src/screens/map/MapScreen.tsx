@@ -34,7 +34,7 @@ export default function MapScreen() {
       setSelectedCategory(data.category);
       setPlaces(data.places);
     }
-    if (data.type === 'MARKER_CLICK') {
+    if (data.type === 'MARKER_CLICK' || data.type === 'MAP_CLICK') {
       setSelectedPlace(data.place);
       previewSheetRef.current?.expand();
     }

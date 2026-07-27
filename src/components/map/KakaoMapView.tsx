@@ -23,7 +23,9 @@ const mapHtml = `
     });
 
     var places = new kakao.maps.services.Places();
+    var geocoder = new kakao.maps.services.Geocoder();
     var markers = [];
+    var clickMarker = null;
 
     function clearMarkers() {
       markers.forEach(function(m) { m.setMap(null); });
@@ -116,6 +118,84 @@ const mapHtml = `
     function zoomOut() {
       map.setLevel(map.getLevel() + 1);
     }
+
+    var CLICK_CATEGORY_CODES = [
+      'MT1', 'CS2', 'PS3', 'SC4', 'AC5', 'PK6', 'OL7', 'SW8', 'BK9',
+      'CT1', 'AG2', 'PO3', 'AT4', 'AD5', 'FD6', 'CE7', 'HP8', 'PM9'
+    ];
+    var CLICK_SEARCH_RADIUS = 50;
+
+    function findNearestPoi(lat, lng, callback) {
+      var center = new kakao.maps.LatLng(lat, lng);
+      var pending = CLICK_CATEGORY_CODES.length;
+      var nearestPlace = null;
+      var nearestDistance = Infinity;
+
+      CLICK_CATEGORY_CODES.forEach(function(code) {
+        places.categorySearch(code, function(result, status) {
+          if (status === kakao.maps.services.Status.OK && result.length > 0) {
+            var candidate = result[0];
+            var distance = Number(candidate.distance);
+            if (distance < nearestDistance) {
+              nearestDistance = distance;
+              nearestPlace = candidate;
+            }
+          }
+          pending -= 1;
+          if (pending <= 0) {
+            callback(nearestPlace);
+          }
+        }, {
+          location: center,
+          radius: CLICK_SEARCH_RADIUS,
+          sort: kakao.maps.services.SortBy.DISTANCE
+        });
+      });
+    }
+
+    function reportAddressAt(lat, lng) {
+      geocoder.coord2Address(lng, lat, function(result, status) {
+        if (status === kakao.maps.services.Status.OK) {
+          var addressInfo = result[0].road_address || result[0].address;
+          var addressName = addressInfo ? addressInfo.address_name : '';
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'MAP_CLICK',
+            place: {
+              id: null,
+              name: addressName || '선택한 위치',
+              category: '선택한 위치',
+              address: addressName,
+              phone: '',
+              lat: lat,
+              lng: lng,
+              distance: null
+            }
+          }));
+        }
+      });
+    }
+
+    kakao.maps.event.addListener(map, 'click', function(mouseEvent) {
+      var latlng = mouseEvent.latLng;
+      var lat = latlng.getLat();
+      var lng = latlng.getLng();
+
+      if (clickMarker) {
+        clickMarker.setMap(null);
+      }
+      clickMarker = new kakao.maps.Marker({ position: latlng, map: map });
+
+      findNearestPoi(lat, lng, function(nearestPlace) {
+        if (nearestPlace) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'MAP_CLICK',
+            place: toPlaceData(nearestPlace)
+          }));
+        } else {
+          reportAddressAt(lat, lng);
+        }
+      });
+    });
   </script>
 </body>
 </html>

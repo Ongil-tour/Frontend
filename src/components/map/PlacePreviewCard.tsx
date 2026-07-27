@@ -42,9 +42,11 @@ const PlacePreviewCard = forwardRef<BottomSheet, Props>(({ place, onDetailPress,
               <TouchableOpacity style={styles.secondaryButton} onPress={openInKakaoMap}>
                 <Text style={styles.secondaryButtonText}>카카오맵으로 보기</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.primaryButton} onPress={() => onDetailPress(place)}>
-                <Text style={styles.primaryButtonText}>상세보기</Text>
-              </TouchableOpacity>
+              {place.id ? (
+                <TouchableOpacity style={styles.primaryButton} onPress={() => onDetailPress(place)}>
+                  <Text style={styles.primaryButtonText}>상세보기</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
           </>
         ) : null}

@@ -18,7 +18,7 @@ export interface Place {
 }
 
 export interface KakaoPlace {
-  id: string;
+  id: string | null;
   name: string;
   category: string;
   address: string;
