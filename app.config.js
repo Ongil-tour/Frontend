@@ -9,7 +9,10 @@ export default {
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.ongil.app"
+      bundleIdentifier: "com.ongil.app",
+      infoPlist: {
+        LSApplicationQueriesSchemes: ["kakaomap"]
+      }
     },
     android: {
       package: "com.ongil.app",

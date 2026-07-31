@@ -15,11 +15,13 @@ const PlacePreviewCard = forwardRef<BottomSheet, Props>(({ place, onDetailPress,
     const appUrl = place.id
       ? `kakaomap://place?id=${place.id}`
       : `kakaomap://look?p=${place.lat},${place.lng}`;
-    const webUrl = `https://map.kakao.com/link/map/${encodeURIComponent(place.name)},${place.lat},${place.lng}`;
+    const webUrl = place.id
+      ? `https://m.map.kakao.com/scheme/place?id=${place.id}`
+      : `https://m.map.kakao.com/scheme/look?p=${place.lat},${place.lng}`;
 
-    Linking.canOpenURL(appUrl).then((supported) => {
-      Linking.openURL(supported ? appUrl : webUrl);
-    });
+    Linking.canOpenURL(appUrl)
+      .then((supported) => Linking.openURL(supported ? appUrl : webUrl))
+      .catch(() => Linking.openURL(webUrl));
   };
 
   return (

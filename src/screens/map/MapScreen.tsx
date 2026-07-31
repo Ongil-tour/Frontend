@@ -1,10 +1,13 @@
 import { useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import BottomSheet from '@gorhom/bottom-sheet';
 import KakaoMapView, { KakaoMapViewHandle } from '../../components/map/KakaoMapView';
 import PlacePreviewCard from '../../components/map/PlacePreviewCard';
 import { useCurrentLocation } from '../../hooks/useCurrentLocation';
+import { RootStackParamList } from '../../navigation/types';
 import { KakaoPlace } from '../../types/place';
 
 const CATEGORIES = [
@@ -29,6 +32,7 @@ export default function MapScreen() {
   const [places, setPlaces] = useState<any[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
   const { getCurrentLocation } = useCurrentLocation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Map'>>();
 
   const handleMessage = (event: any) => {
     const data = JSON.parse(event.nativeEvent.data);
@@ -52,8 +56,7 @@ export default function MapScreen() {
   };
 
   const handleDetailPress = (place: KakaoPlace) => {
-    // TODO(Phase 2): navigate to PlaceDetailScreen once it's wired up
-    console.log('상세보기 요청:', place.name);
+    navigation.navigate('PlaceDetail', { place });
   };
 
   const handleLocatePress = async () => {
