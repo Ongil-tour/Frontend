@@ -14,6 +14,9 @@ import { KakaoPlace } from '../../types/place';
 // 백엔드 GET /map/markers가 받는 카테고리 값 그대로 (내부 TourAPI DB 6종 + 카카오 실시간 2종)
 const CATEGORIES = ['관광지', '식당', '카페', '숙소', '화장실', '주차장', '편의점', '병원'];
 
+// 백엔드 GET /facilities/nearby가 허용하는 반경(km)과 동일
+const RADIUS_OPTIONS = [1, 3, 5];
+
 const RESULT_LABELS: Record<string, string> = {
   SEARCH: '검색결과',
 };
@@ -26,7 +29,8 @@ export default function MapScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [places, setPlaces] = useState<KakaoPlace[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
-  const { getCurrentLocation } = useCurrentLocation();
+  const [selectedRadiusKm, setSelectedRadiusKm] = useState<number | null>(null);
+  const { location: userLocation, getCurrentLocation } = useCurrentLocation();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Map'>>();
 
   const handleMessage = (event: any) => {
@@ -45,7 +49,36 @@ export default function MapScreen() {
   };
 
   const handleCategoryPress = (category: string) => {
+    if (selectedRadiusKm != null && userLocation) {
+      mapRef.current?.searchFacilityCategory(category, {
+        lat: userLocation.lat,
+        lng: userLocation.lng,
+        radiusM: selectedRadiusKm * 1000,
+      });
+      return;
+    }
     mapRef.current?.searchFacilityCategory(category);
+  };
+
+  const handleRadiusPress = async (km: number) => {
+    if (selectedRadiusKm === km) {
+      setSelectedRadiusKm(null);
+      return;
+    }
+    const coords = await getCurrentLocation();
+    if (!coords) {
+      Alert.alert('위치 권한 필요', '설정에서 위치 권한을 허용해주세요.');
+      return;
+    }
+    setSelectedRadiusKm(km);
+    mapRef.current?.showRadiusCircle(coords.lat, coords.lng, km * 1000);
+    if (selectedCategory) {
+      mapRef.current?.searchFacilityCategory(selectedCategory, {
+        lat: coords.lat,
+        lng: coords.lng,
+        radiusM: km * 1000,
+      });
+    }
   };
 
   const handleSearchSubmit = () => {
@@ -100,6 +133,19 @@ export default function MapScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+      </View>
+      <View style={styles.radiusBar}>
+        {RADIUS_OPTIONS.map((km) => (
+          <TouchableOpacity
+            key={km}
+            style={[styles.radiusButton, selectedRadiusKm === km && styles.radiusButtonActive]}
+            onPress={() => handleRadiusPress(km)}
+          >
+            <Text style={[styles.radiusText, selectedRadiusKm === km && styles.radiusTextActive]}>
+              {km}km
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
       <View style={styles.mapContainer}>
         <KakaoMapView ref={mapRef} onMessage={handleMessage} />
@@ -173,6 +219,32 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   categoryTextActive: {
+    color: 'white',
+  },
+  radiusBar: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: 'white',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#e5e5e5',
+  },
+  radiusButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#f2f2f2',
+  },
+  radiusButtonActive: {
+    backgroundColor: '#3B82F6',
+  },
+  radiusText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#333',
+  },
+  radiusTextActive: {
     color: 'white',
   },
   mapContainer: { flex: 1 },

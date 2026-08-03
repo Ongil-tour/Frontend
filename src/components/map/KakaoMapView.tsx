@@ -125,12 +125,13 @@ const mapHtml = `
 
     // 백엔드 GET /map/markers — 내부 TourAPI DB(관광지/식당/카페/숙소/화장실/주차장)
     // + 카카오 실시간(편의점/병원)을 합쳐서 반환. 카테고리 버튼은 전부 이걸 탄다.
-    function searchFacilityCategory(category) {
-      var center = map.getCenter();
-      var centerLat = center.getLat();
-      var centerLng = center.getLng();
+    // lat/lng/radiusM이 오면 그 좌표(반경 필터 선택 시 내 위치) 기준, 없으면 지도 중심+1km 기본값
+    function searchFacilityCategory(category, lat, lng, radiusM) {
+      var centerLat = lat != null ? lat : map.getCenter().getLat();
+      var centerLng = lng != null ? lng : map.getCenter().getLng();
+      var effectiveRadius = radiusM != null ? radiusM : 1000;
       var url = API_BASE_URL + '/map/markers?lat=' + centerLat + '&lng=' + centerLng +
-        '&radius_m=1000&category=' + encodeURIComponent(category);
+        '&radius_m=' + effectiveRadius + '&category=' + encodeURIComponent(category);
 
       function renderItems(items) {
         clearMarkers();
@@ -203,6 +204,34 @@ const mapHtml = `
       });
       currentLocationOverlay.setMap(map);
       map.setCenter(position);
+    }
+
+    var radiusCircle = null;
+    var radiusCircleTimeout = null;
+
+    function showRadiusCircle(lat, lng, radiusM) {
+      if (radiusCircle) {
+        radiusCircle.setMap(null);
+      }
+      if (radiusCircleTimeout) {
+        clearTimeout(radiusCircleTimeout);
+      }
+      radiusCircle = new kakao.maps.Circle({
+        center: new kakao.maps.LatLng(lat, lng),
+        radius: radiusM,
+        strokeWeight: 1,
+        strokeColor: '#4285F4',
+        strokeOpacity: 0.5,
+        fillColor: '#4285F4',
+        fillOpacity: 0.15
+      });
+      radiusCircle.setMap(map);
+      radiusCircleTimeout = setTimeout(function() {
+        if (radiusCircle) {
+          radiusCircle.setMap(null);
+          radiusCircle = null;
+        }
+      }, 2500);
     }
 
     var CLICK_CATEGORY_CODES = [
@@ -288,11 +317,12 @@ const mapHtml = `
 `;
 
 export interface KakaoMapViewHandle {
-  searchFacilityCategory: (category: string) => void;
+  searchFacilityCategory: (category: string, origin?: { lat: number; lng: number; radiusM: number }) => void;
   searchKeyword: (keyword: string) => void;
   zoomIn: () => void;
   zoomOut: () => void;
   showCurrentLocation: (lat: number, lng: number) => void;
+  showRadiusCircle: (lat: number, lng: number, radiusM: number) => void;
 }
 
 interface Props {
@@ -303,8 +333,11 @@ function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) 
   const webViewRef = useRef<WebView>(null);
 
   useImperativeHandle(ref, () => ({
-    searchFacilityCategory: (category: string) => {
-      webViewRef.current?.injectJavaScript(`searchFacilityCategory(${JSON.stringify(category)}); true;`);
+    searchFacilityCategory: (category: string, origin?: { lat: number; lng: number; radiusM: number }) => {
+      const args = origin
+        ? `${JSON.stringify(category)}, ${origin.lat}, ${origin.lng}, ${origin.radiusM}`
+        : JSON.stringify(category);
+      webViewRef.current?.injectJavaScript(`searchFacilityCategory(${args}); true;`);
     },
     searchKeyword: (keyword: string) => {
       webViewRef.current?.injectJavaScript(`searchKeyword(${JSON.stringify(keyword)}); true;`);
@@ -317,6 +350,9 @@ function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) 
     },
     showCurrentLocation: (lat: number, lng: number) => {
       webViewRef.current?.injectJavaScript(`showCurrentLocation(${lat}, ${lng}); true;`);
+    },
+    showRadiusCircle: (lat: number, lng: number, radiusM: number) => {
+      webViewRef.current?.injectJavaScript(`showRadiusCircle(${lat}, ${lng}, ${radiusM}); true;`);
     },
   }));
 
