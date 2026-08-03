@@ -1,23 +1,27 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import AccessibilityGrid, { AccessibilityItem } from '../../components/map/AccessibilityGrid';
+import { useAccessibilityQuery } from '../../queries/useAccessibilityQuery';
 import { RootStackParamList } from '../../navigation/types';
+import { FacilityMatchResult } from '../../types/place';
 
-// 백엔드 배리어프리 정보 API 연동 전까지 쓰는 임시 목데이터
-const MOCK_ACCESSIBILITY: AccessibilityItem[] = [
-  { key: 'wheelchair', label: '휠체어 경사로', icon: '♿', available: true },
-  { key: 'restroom', label: '장애인 화장실', icon: '🚻', available: true },
-  { key: 'parking', label: '전용 주차장', icon: '🅿️', available: false },
-  { key: 'elevator', label: '엘리베이터', icon: '🛗', available: true },
-  { key: 'serviceDog', label: '보호견 동반', icon: '🐕', available: false },
-  { key: 'nursingRoom', label: '수유실', icon: '🍼', available: true },
-];
+function toAccessibilityItems(facility: FacilityMatchResult): AccessibilityItem[] {
+  return [
+    { key: 'wheelchair_accessible', label: '휠체어 접근', icon: '♿', available: !!facility.wheelchair_accessible },
+    { key: 'disabled_restroom', label: '장애인 화장실', icon: '🚻', available: !!facility.disabled_restroom },
+    { key: 'disabled_parking', label: '전용 주차장', icon: '🅿️', available: !!facility.disabled_parking },
+    { key: 'elevator', label: '엘리베이터', icon: '🛗', available: !!facility.elevator },
+    { key: 'pet_friendly', label: '보호견 동반', icon: '🐕', available: !!facility.pet_friendly },
+    { key: 'nursing_room', label: '수유실', icon: '🍼', available: !!facility.nursing_room },
+  ];
+}
 
 export default function PlaceDetailScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'PlaceDetail'>>();
   const { place } = route.params;
   const [bookmarked, setBookmarked] = useState(false);
+  const { data, isLoading, isError } = useAccessibilityQuery({ lat: place.lat, lng: place.lng });
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -32,7 +36,15 @@ export default function PlaceDetailScreen() {
         {place.distance != null ? ` · ${place.distance}km 거리` : ''}
       </Text>
 
-      <AccessibilityGrid items={MOCK_ACCESSIBILITY} />
+      {isLoading ? (
+        <ActivityIndicator style={styles.statusBox} />
+      ) : isError ? (
+        <Text style={styles.statusText}>배리어프리 정보를 불러오지 못했습니다.</Text>
+      ) : !data?.matched || !data.facility ? (
+        <Text style={styles.statusText}>{data?.message ?? '등록된 무장애 관광 정보가 없습니다.'}</Text>
+      ) : (
+        <AccessibilityGrid items={toAccessibilityItems(data.facility)} />
+      )}
 
       <View style={styles.infoRow}>
         <Text style={styles.infoIcon}>📍</Text>
@@ -59,6 +71,8 @@ const styles = StyleSheet.create({
   name: { fontSize: 22, fontWeight: '700', color: '#111', flexShrink: 1 },
   bookmark: { fontSize: 22 },
   meta: { fontSize: 14, color: '#777', marginTop: -8 },
+  statusBox: { paddingVertical: 24 },
+  statusText: { fontSize: 14, color: '#999', textAlign: 'center', paddingVertical: 24 },
   infoRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   infoIcon: { fontSize: 16, width: 20 },
   infoLabel: { fontSize: 13, fontWeight: '600', color: '#666' },
