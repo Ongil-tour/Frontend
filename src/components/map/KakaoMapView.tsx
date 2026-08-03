@@ -3,6 +3,7 @@ import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { StyleSheet } from 'react-native';
 
 const KAKAO_JS_KEY = process.env.EXPO_PUBLIC_KAKAO_JS_KEY;
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const mapHtml = `
 <!DOCTYPE html>
@@ -27,10 +28,26 @@ const mapHtml = `
     var markers = [];
     var clickMarker = null;
     var currentLocationOverlay = null;
+    var API_BASE_URL = ${JSON.stringify(API_BASE_URL ?? '')};
 
     function clearMarkers() {
       markers.forEach(function(m) { m.setMap(null); });
       markers = [];
+    }
+
+    function addMarkerAt(data) {
+      var marker = new kakao.maps.Marker({
+        position: new kakao.maps.LatLng(data.lat, data.lng),
+        map: map
+      });
+      kakao.maps.event.addListener(marker, 'click', function() {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'MARKER_CLICK',
+          place: data
+        }));
+      });
+      markers.push(marker);
+      return data;
     }
 
     function toPlaceData(place) {
@@ -47,44 +64,98 @@ const mapHtml = `
     }
 
     function addMarker(place) {
-      var data = toPlaceData(place);
-      var marker = new kakao.maps.Marker({
-        position: new kakao.maps.LatLng(place.y, place.x),
-        map: map
-      });
-      kakao.maps.event.addListener(marker, 'click', function() {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'MARKER_CLICK',
-          place: data
-        }));
-      });
-      markers.push(marker);
-      return data;
+      return addMarkerAt(toPlaceData(place));
     }
 
-    function searchCategory(code) {
-      var center = map.getCenter();
-      places.categorySearch(code, function(result, status) {
-        clearMarkers();
-        if (status === kakao.maps.services.Status.OK) {
-          var placeList = result.map(addMarker);
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'PLACES_RESULT',
-            category: code,
-            places: placeList
-          }));
-        } else {
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'PLACES_RESULT',
-            category: code,
-            places: []
-          }));
+    function haversineKm(lat1, lng1, lat2, lng2) {
+      var R = 6371;
+      var dLat = (lat2 - lat1) * Math.PI / 180;
+      var dLng = (lng2 - lng1) * Math.PI / 180;
+      var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return Math.round(R * c * 10) / 10;
+    }
+
+    function toFacilityPlaceData(item, distanceKm) {
+      return {
+        id: item.id,
+        name: item.name,
+        address: item.address,
+        category: item.category,
+        phone: item.phone,
+        lat: item.lat,
+        lng: item.lng,
+        distance: distanceKm,
+        accessibility: {
+          wheelchair_accessible: item.wheelchair_accessible,
+          disabled_restroom: item.disabled_restroom,
+          disabled_parking: item.disabled_parking,
+          elevator: item.elevator,
+          pet_friendly: item.pet_friendly,
+          nursing_room: item.nursing_room
         }
-      }, {
-        location: center,
-        radius: 1000,
-        sort: kakao.maps.services.SortBy.DISTANCE
+      };
+    }
+
+    // TODO(demo): 백엔드 CORS/연동 확인되면 이 함수 통째로 지울 것.
+    // 지금은 /map/markers 호출이 실패하거나(CORS) 결과가 비어있을 때 데모용 더미 데이터로
+    // 대체해서, 카테고리 버튼 UI(마커+리스트시트+배지)가 동작하는 것만 먼저 보여준다.
+    function buildDummyItems(category, centerLat, centerLng) {
+      var names = ['숲속', '한빛', '모두의', '함께하는', '푸른'];
+      return names.map(function(prefix, i) {
+        return {
+          id: 'dummy-' + category + '-' + i,
+          name: prefix + ' ' + category,
+          category: category,
+          address: '서울 어딘가 ' + (i + 1) + '길 10',
+          phone: '02-000-000' + i,
+          lat: centerLat + (Math.random() - 0.5) * 0.01,
+          lng: centerLng + (Math.random() - 0.5) * 0.01,
+          wheelchair_accessible: i % 2 === 0,
+          disabled_restroom: i % 3 !== 0,
+          disabled_parking: i % 2 !== 0,
+          elevator: i % 3 === 0,
+          pet_friendly: i % 2 === 0,
+          nursing_room: i % 4 === 0
+        };
       });
+    }
+
+    // 백엔드 GET /map/markers — 내부 TourAPI DB(관광지/식당/카페/숙소/화장실/주차장)
+    // + 카카오 실시간(편의점/병원)을 합쳐서 반환. 카테고리 버튼은 전부 이걸 탄다.
+    function searchFacilityCategory(category) {
+      var center = map.getCenter();
+      var centerLat = center.getLat();
+      var centerLng = center.getLng();
+      var url = API_BASE_URL + '/map/markers?lat=' + centerLat + '&lng=' + centerLng +
+        '&radius_m=1000&category=' + encodeURIComponent(category);
+
+      function renderItems(items) {
+        clearMarkers();
+        items.sort(function(a, b) {
+          return haversineKm(centerLat, centerLng, a.lat, a.lng) - haversineKm(centerLat, centerLng, b.lat, b.lng);
+        });
+        var placeList = items.map(function(item) {
+          var distanceKm = haversineKm(centerLat, centerLng, item.lat, item.lng);
+          return addMarkerAt(toFacilityPlaceData(item, distanceKm));
+        });
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'PLACES_RESULT',
+          category: category,
+          places: placeList
+        }));
+      }
+
+      fetch(url)
+        .then(function(res) { return res.json(); })
+        .then(function(items) {
+          renderItems(items && items.length > 0 ? items : buildDummyItems(category, centerLat, centerLng));
+        })
+        .catch(function() {
+          renderItems(buildDummyItems(category, centerLat, centerLng));
+        });
     }
 
     function searchKeyword(keyword) {
@@ -217,7 +288,7 @@ const mapHtml = `
 `;
 
 export interface KakaoMapViewHandle {
-  searchCategory: (code: string) => void;
+  searchFacilityCategory: (category: string) => void;
   searchKeyword: (keyword: string) => void;
   zoomIn: () => void;
   zoomOut: () => void;
@@ -232,8 +303,8 @@ function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) 
   const webViewRef = useRef<WebView>(null);
 
   useImperativeHandle(ref, () => ({
-    searchCategory: (code: string) => {
-      webViewRef.current?.injectJavaScript(`searchCategory(${JSON.stringify(code)}); true;`);
+    searchFacilityCategory: (category: string) => {
+      webViewRef.current?.injectJavaScript(`searchFacilityCategory(${JSON.stringify(category)}); true;`);
     },
     searchKeyword: (keyword: string) => {
       webViewRef.current?.injectJavaScript(`searchKeyword(${JSON.stringify(keyword)}); true;`);
@@ -259,6 +330,7 @@ function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) 
       scrollEnabled={false}
       bounces={false}
       overScrollMode="never"
+      webviewDebuggingEnabled={__DEV__}
     />
   );
 }

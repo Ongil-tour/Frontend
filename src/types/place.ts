@@ -48,4 +48,6 @@ export interface KakaoPlace {
   lat: number;
   lng: number;
   distance: number | null;
+  // 백엔드(/map/markers) 결과에만 존재. 카카오 키워드 검색 결과 등에는 없음
+  accessibility?: AccessibilityInfo;
 }

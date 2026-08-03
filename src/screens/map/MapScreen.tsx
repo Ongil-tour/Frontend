@@ -6,30 +6,25 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import BottomSheet from '@gorhom/bottom-sheet';
 import KakaoMapView, { KakaoMapViewHandle } from '../../components/map/KakaoMapView';
 import PlacePreviewCard from '../../components/map/PlacePreviewCard';
+import PlaceListSheet from '../../components/map/PlaceListSheet';
 import { useCurrentLocation } from '../../hooks/useCurrentLocation';
 import { RootStackParamList } from '../../navigation/types';
 import { KakaoPlace } from '../../types/place';
 
-const CATEGORIES = [
-  { label: '음식점', code: 'FD6' },
-  { label: '카페', code: 'CE7' },
-  { label: '숙소', code: 'AD5' },
-  { label: '관광지', code: 'AT4' },
-  { label: '병원', code: 'HP8' },
-  { label: '편의점', code: 'CS2' },
-];
+// 백엔드 GET /map/markers가 받는 카테고리 값 그대로 (내부 TourAPI DB 6종 + 카카오 실시간 2종)
+const CATEGORIES = ['관광지', '식당', '카페', '숙소', '화장실', '주차장', '편의점', '병원'];
 
 const RESULT_LABELS: Record<string, string> = {
   SEARCH: '검색결과',
-  ...Object.fromEntries(CATEGORIES.map((c) => [c.code, c.label])),
 };
 
 export default function MapScreen() {
   const mapRef = useRef<KakaoMapViewHandle>(null);
   const previewSheetRef = useRef<BottomSheet>(null);
+  const listSheetRef = useRef<BottomSheet>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [places, setPlaces] = useState<any[]>([]);
+  const [places, setPlaces] = useState<KakaoPlace[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
   const { getCurrentLocation } = useCurrentLocation();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Map'>>();
@@ -39,15 +34,18 @@ export default function MapScreen() {
     if (data.type === 'PLACES_RESULT') {
       setSelectedCategory(data.category);
       setPlaces(data.places);
+      previewSheetRef.current?.close();
+      listSheetRef.current?.snapToIndex(0);
     }
     if (data.type === 'MARKER_CLICK' || data.type === 'MAP_CLICK') {
       setSelectedPlace(data.place);
+      listSheetRef.current?.close();
       previewSheetRef.current?.expand();
     }
   };
 
-  const handleCategoryPress = (code: string) => {
-    mapRef.current?.searchCategory(code);
+  const handleCategoryPress = (category: string) => {
+    mapRef.current?.searchFacilityCategory(category);
   };
 
   const handleSearchSubmit = () => {
@@ -56,6 +54,10 @@ export default function MapScreen() {
   };
 
   const handleDetailPress = (place: KakaoPlace) => {
+    navigation.navigate('PlaceDetail', { place });
+  };
+
+  const handleListItemPress = (place: KakaoPlace) => {
     navigation.navigate('PlaceDetail', { place });
   };
 
@@ -86,14 +88,14 @@ export default function MapScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryList}>
           {CATEGORIES.map((category) => (
             <TouchableOpacity
-              key={category.code}
-              style={[styles.categoryButton, selectedCategory === category.code && styles.categoryButtonActive]}
-              onPress={() => handleCategoryPress(category.code)}
+              key={category}
+              style={[styles.categoryButton, selectedCategory === category && styles.categoryButtonActive]}
+              onPress={() => handleCategoryPress(category)}
             >
               <Text
-                style={[styles.categoryText, selectedCategory === category.code && styles.categoryTextActive]}
+                style={[styles.categoryText, selectedCategory === category && styles.categoryTextActive]}
               >
-                {category.label}
+                {category}
               </Text>
             </TouchableOpacity>
           ))}
@@ -113,18 +115,18 @@ export default function MapScreen() {
         <TouchableOpacity style={styles.locateButton} onPress={handleLocatePress}>
           <Text style={styles.locateButtonText}>◎</Text>
         </TouchableOpacity>
-        {selectedCategory ? (
-          <View style={styles.infoBox}>
-            <Text style={styles.countText}>
-              {RESULT_LABELS[selectedCategory] ?? selectedCategory} {places.length}곳 발견
-            </Text>
-          </View>
-        ) : null}
         <PlacePreviewCard
           ref={previewSheetRef}
           place={selectedPlace}
           onDetailPress={handleDetailPress}
           onClose={() => setSelectedPlace(null)}
+        />
+        <PlaceListSheet
+          ref={listSheetRef}
+          category={selectedCategory ? RESULT_LABELS[selectedCategory] ?? selectedCategory : null}
+          places={places}
+          onItemPress={handleListItemPress}
+          onClose={() => setSelectedCategory(null)}
         />
       </View>
     </SafeAreaView>
@@ -213,18 +215,4 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   locateButtonText: { fontSize: 20, color: '#3B82F6' },
-  infoBox: {
-    position: 'absolute',
-    bottom: 30,
-    left: 16,
-    right: 16,
-    backgroundColor: 'white',
-    padding: 12,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  countText: { fontSize: 12, color: '#666' },
 });
