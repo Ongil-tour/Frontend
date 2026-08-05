@@ -2,12 +2,12 @@ import { View, Text, StyleSheet } from 'react-native';
 import { AccessibilityInfo } from '../../types/place';
 
 const BADGES: { key: keyof AccessibilityInfo; icon: string }[] = [
-  { key: 'wheelchair_accessible', icon: '♿' },
-  { key: 'disabled_restroom', icon: '🚻' },
-  { key: 'disabled_parking', icon: '🅿️' },
+  { key: 'wheelchairAccessible', icon: '♿' },
+  { key: 'disabledRestroom', icon: '🚻' },
+  { key: 'parkingLot', icon: '🅿️' },
   { key: 'elevator', icon: '🛗' },
-  { key: 'pet_friendly', icon: '🐕' },
-  { key: 'nursing_room', icon: '🍼' },
+  { key: 'petFriendly', icon: '🐕' },
+  { key: 'nursingRoom', icon: '🍼' },
 ];
 
 interface Props {

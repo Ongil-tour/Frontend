@@ -1,31 +1,30 @@
-// app/models/facility.py Facility 모델 기준 (2026-08-02 공유분)
+// POST /facilities/match-by-location 실제 응답 기준 (2026-08-05 캡처, camelCase + 중첩 구조 확인됨)
 export interface AccessibilityInfo {
-  wheelchair_accessible: boolean | null;
-  disabled_restroom: boolean | null;
-  disabled_parking: boolean | null;
+  wheelchairAccessible: boolean | null;
+  disabledRestroom: boolean | null;
+  parkingLot: boolean | null;
   elevator: boolean | null;
-  pet_friendly: boolean | null;
-  nursing_room: boolean | null;
+  petFriendly: boolean | null;
+  nursingRoom: boolean | null;
 }
 
 // POST /facilities/match-by-location 응답의 facility 필드.
-// app/schemas/facility.py의 FacilityMatchResult 원문은 못 봐서, Facility 모델과
-// map.py의 _internal_to_unified 매핑 기준으로 추정 — 실제 응답과 다르면 여기만 고치면 됨
-export interface FacilityMatchResult extends AccessibilityInfo {
+// category 필드는 응답에 없음. accessibility는 별도 중첩 객체로 옴 (facility.accessibility.xxx)
+export interface FacilityMatchResult {
   id: string;
   name: string;
-  category: string | null;
   address: string | null;
   phone: string | null;
-  operating_hours: string | null;
+  operatingHours: string | null;
   lat: number;
   lng: number;
+  accessibility: AccessibilityInfo;
 }
 
 export interface MatchByLocationResponse {
   matched: boolean;
   facility?: FacilityMatchResult;
-  message?: string;
+  message?: string | null;
 }
 
 export interface Place {

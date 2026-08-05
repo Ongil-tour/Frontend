@@ -7,13 +7,14 @@ import { RootStackParamList } from '../../navigation/types';
 import { FacilityMatchResult } from '../../types/place';
 
 function toAccessibilityItems(facility: FacilityMatchResult): AccessibilityItem[] {
+  const a = facility.accessibility;
   return [
-    { key: 'wheelchair_accessible', label: '휠체어 접근', icon: '♿', available: !!facility.wheelchair_accessible },
-    { key: 'disabled_restroom', label: '장애인 화장실', icon: '🚻', available: !!facility.disabled_restroom },
-    { key: 'disabled_parking', label: '전용 주차장', icon: '🅿️', available: !!facility.disabled_parking },
-    { key: 'elevator', label: '엘리베이터', icon: '🛗', available: !!facility.elevator },
-    { key: 'pet_friendly', label: '보호견 동반', icon: '🐕', available: !!facility.pet_friendly },
-    { key: 'nursing_room', label: '수유실', icon: '🍼', available: !!facility.nursing_room },
+    { key: 'wheelchairAccessible', label: '휠체어 접근', icon: '♿', available: !!a.wheelchairAccessible },
+    { key: 'disabledRestroom', label: '장애인 화장실', icon: '🚻', available: !!a.disabledRestroom },
+    { key: 'parkingLot', label: '전용 주차장', icon: '🅿️', available: !!a.parkingLot },
+    { key: 'elevator', label: '엘리베이터', icon: '🛗', available: !!a.elevator },
+    { key: 'petFriendly', label: '보호견 동반', icon: '🐕', available: !!a.petFriendly },
+    { key: 'nursingRoom', label: '수유실', icon: '🍼', available: !!a.nursingRoom },
   ];
 }
 

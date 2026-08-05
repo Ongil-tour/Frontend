@@ -78,6 +78,9 @@ const mapHtml = `
       return Math.round(R * c * 10) / 10;
     }
 
+    // match-by-location 응답으로 camelCase가 확인됐지만(2026-08-05), /map/markers 자체는
+    // 아직 CORS 때문에 실제 응답을 못 봤음. camelCase/snake_case 둘 다 방어적으로 읽고,
+    // 확인되면 한쪽으로 정리할 것.
     function toFacilityPlaceData(item, distanceKm) {
       return {
         id: item.id,
@@ -89,38 +92,14 @@ const mapHtml = `
         lng: item.lng,
         distance: distanceKm,
         accessibility: {
-          wheelchair_accessible: item.wheelchair_accessible,
-          disabled_restroom: item.disabled_restroom,
-          disabled_parking: item.disabled_parking,
+          wheelchairAccessible: item.wheelchairAccessible ?? item.wheelchair_accessible,
+          disabledRestroom: item.disabledRestroom ?? item.disabled_restroom,
+          parkingLot: item.parkingLot ?? item.disabledParking ?? item.disabled_parking,
           elevator: item.elevator,
-          pet_friendly: item.pet_friendly,
-          nursing_room: item.nursing_room
+          petFriendly: item.petFriendly ?? item.pet_friendly,
+          nursingRoom: item.nursingRoom ?? item.nursing_room
         }
       };
-    }
-
-    // TODO(demo): 백엔드 CORS/연동 확인되면 이 함수 통째로 지울 것.
-    // 지금은 /map/markers 호출이 실패하거나(CORS) 결과가 비어있을 때 데모용 더미 데이터로
-    // 대체해서, 카테고리 버튼 UI(마커+리스트시트+배지)가 동작하는 것만 먼저 보여준다.
-    function buildDummyItems(category, centerLat, centerLng) {
-      var names = ['숲속', '한빛', '모두의', '함께하는', '푸른'];
-      return names.map(function(prefix, i) {
-        return {
-          id: 'dummy-' + category + '-' + i,
-          name: prefix + ' ' + category,
-          category: category,
-          address: '서울 어딘가 ' + (i + 1) + '길 10',
-          phone: '02-000-000' + i,
-          lat: centerLat + (Math.random() - 0.5) * 0.01,
-          lng: centerLng + (Math.random() - 0.5) * 0.01,
-          wheelchair_accessible: i % 2 === 0,
-          disabled_restroom: i % 3 !== 0,
-          disabled_parking: i % 2 !== 0,
-          elevator: i % 3 === 0,
-          pet_friendly: i % 2 === 0,
-          nursing_room: i % 4 === 0
-        };
-      });
     }
 
     // 백엔드 GET /map/markers — 내부 TourAPI DB(관광지/식당/카페/숙소/화장실/주차장)
@@ -152,10 +131,10 @@ const mapHtml = `
       fetch(url)
         .then(function(res) { return res.json(); })
         .then(function(items) {
-          renderItems(items && items.length > 0 ? items : buildDummyItems(category, centerLat, centerLng));
+          renderItems(items || []);
         })
         .catch(function() {
-          renderItems(buildDummyItems(category, centerLat, centerLng));
+          renderItems([]);
         });
     }
 
@@ -360,7 +339,7 @@ function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) 
     <WebView
       ref={webViewRef}
       originWhitelist={['*']}
-      source={{ html: mapHtml, baseUrl: 'https://localhost' }}
+      source={{ html: mapHtml, baseUrl: 'http://localhost' }}
       style={styles.map}
       onMessage={onMessage}
       scrollEnabled={false}
