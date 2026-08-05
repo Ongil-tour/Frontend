@@ -91,6 +91,7 @@ const mapHtml = `
         lat: item.lat,
         lng: item.lng,
         distance: distanceKm,
+        source: item.source,
         accessibility: {
           wheelchairAccessible: item.wheelchairAccessible ?? item.wheelchair_accessible,
           disabledRestroom: item.disabledRestroom ?? item.disabled_restroom,

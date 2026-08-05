@@ -49,4 +49,7 @@ export interface KakaoPlace {
   distance: number | null;
   // 백엔드(/map/markers) 결과에만 존재. 카카오 키워드 검색 결과 등에는 없음
   accessibility?: AccessibilityInfo;
+  // /map/markers의 UnifiedFacilityItem.source ('internal' | 'kakao'). 있으면 이미
+  // 정확한 접근성 데이터를 들고 온 것이므로 상세화면에서 좌표 재조회를 하지 않는다.
+  source?: 'internal' | 'kakao';
 }
