@@ -23,13 +23,13 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-  [
-    "expo-build-properties",
-    {
-      "android": {
-      }
-    }
-  ]
-]
+      [
+        "expo-build-properties",
+        {
+          "android": {}
+        }
+      ],
+      "expo-secure-store"
+    ]
   }
 }

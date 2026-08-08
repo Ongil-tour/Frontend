@@ -13,16 +13,15 @@ import {
 } from "react-native";
 
 export default function Setting() {
-  const openDeleteModal = (type: string) => {
-    setDeleteType(type);
-    setModalVisible(true);
-  };
-
   const { isDark, fontSize, setFontSize } = useSettingStore();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const [modalVisible, setModalVisible] = React.useState(false);
-  const [deleteType, setDeleteType] = React.useState("");
+  const [modalType, setModalType] = React.useState("");
   const [toast, setToast] = React.useState("");
+  const openModal = (type: string) => {
+    setModalType(type);
+    setModalVisible(true);
+  };
 
   const colors = {
     background: isDark ? "#222222" : "#FFFFFF",
@@ -42,10 +41,18 @@ export default function Setting() {
     small: fontSize - 1,
   };
 
-  const confirmDelete = () => {
-    console.log(`${deleteType} 삭제`);
+  const confirmAction = () => {
+    console.log('${modalType} 실행');
+    console.log("modalType:", modalType);
     setModalVisible(false);
-    setToast(`${deleteType}가 삭제되었습니다.`);
+    setToast(
+      modalType === "로그아웃"
+        ? "로그아웃되었습니다."
+        : modalType === "회원 탈퇴"
+        ? "회원 탈퇴가 완료되었습니다."
+        : `${modalType}가 삭제되었습니다.`
+    );
+
     setTimeout(() => {
       setToast("");
     }, 3000);
@@ -71,7 +78,7 @@ export default function Setting() {
               styles.back,
               {
                 color: colors.text,
-                fontSize: sizes.title,
+                fontSize: sizes.title + 6,
               },
             ]}
           >
@@ -138,6 +145,7 @@ export default function Setting() {
               styles.sizeBtn,
               fontSize === 15 && {
                 backgroundColor: colors.innerCard,
+                borderRadius: 10,
               },
             ]}
             onPress={() => setFontSize(15)}
@@ -157,6 +165,7 @@ export default function Setting() {
               styles.sizeBtn,
               fontSize === 17 && {
                 backgroundColor: colors.innerCard,
+                borderRadius: 10,
               },
             ]}
             onPress={() => setFontSize(17)}
@@ -176,6 +185,7 @@ export default function Setting() {
               styles.sizeBtn,
               fontSize === 19 && {
                 backgroundColor: colors.innerCard,
+                borderRadius: 10,
               },
             ]}
             onPress={() => setFontSize(19)}
@@ -213,7 +223,7 @@ export default function Setting() {
             borderColor: colors.border,
           },
         ]}
-        onPress={() => openDeleteModal("검색 기록")}
+        onPress={() => openModal("검색 기록")}
       >
         <Text
           style={{
@@ -240,7 +250,7 @@ export default function Setting() {
             borderColor: colors.border,
           },
         ]}
-        onPress={() => openDeleteModal("즐겨찾기")}
+        onPress={() => openModal("즐겨찾기")}
       >
         <Text
           style={{
@@ -272,7 +282,10 @@ export default function Setting() {
         계정
       </Text>
 
-      <TouchableOpacity style={styles.accountBtn}>
+      <TouchableOpacity
+        style={styles.accountBtn}
+        onPress={() => openModal("로그아웃")}
+      >
         <Text
           style={{
           color: colors.text,
@@ -283,7 +296,10 @@ export default function Setting() {
       </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.accountBtn}>
+      <TouchableOpacity
+        style={styles.accountBtn}
+        onPress={() => openModal("회원 탈퇴")}
+      >
         <Text
           style={{
             color: colors.danger,
@@ -372,9 +388,10 @@ export default function Setting() {
               },
             ]}
           >
-            {deleteType} 삭제
+            {modalType === "로그아웃" || modalType === "회원 탈퇴"
+              ? modalType
+              : `${modalType} 삭제`}
           </Text>
-
 
           <Text
             style={[
@@ -385,10 +402,12 @@ export default function Setting() {
               },
             ]}
           >
-            정말 삭제하시겠습니까?
-          </Text>
-
-
+            {modalType === "회원 탈퇴"
+              ? "정말 회원 탈퇴하시겠습니까?\n탈퇴 후에는 계정을 복구할 수 없습니다."
+              : modalType === "로그아웃"
+              ? "정말 로그아웃하시겠습니까?"
+              : "정말 삭제하시겠습니까?"}
+            </Text>
           <View style={styles.modalButtons}>
 
             <Pressable
@@ -406,7 +425,7 @@ export default function Setting() {
 
 
             <Pressable
-              onPress={confirmDelete}
+              onPress={confirmAction}
             >
               <Text
                 style={{

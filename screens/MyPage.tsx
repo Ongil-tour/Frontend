@@ -9,11 +9,22 @@ import {
   StyleSheet,
   Switch,
   TouchableOpacity,
+  Pressable,
+  Image,
 } from "react-native";
 
+const profileImages = [
+  require("../assets/profile/profile1.png"),
+  require("../assets/profile/profile2.png"),
+  require("../assets/profile/profile3.png"),
+  require("../assets/profile/profile4.png"),
+];
+
 export default function MyPage() {
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { isDark, setIsDark, fontSize } = useSettingStore();
+  const [profileImage, setProfileImage] = useState(profileImages[0]);
 
   const colors = {
     background: isDark ? "#222222" : "#FFFFFF",
@@ -58,9 +69,15 @@ export default function MyPage() {
       {/* 프로필 */}
       <View style={styles.profileContainer}>
         <View style={styles.profileWrapper}>
-          <View style={styles.profileImage} />
+          <Image
+            source={profileImage}
+            style={styles.profileImage}
+          />
 
-          <TouchableOpacity style={styles.editButton}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => setShowProfileEdit(true)}
+          >
             <Text style={styles.editText}>✎</Text>
           </TouchableOpacity>
         </View>
@@ -162,13 +179,15 @@ export default function MyPage() {
       </TouchableOpacity>
 
       {/* 즐겨찾는 장소 */}
-      <View
+      <TouchableOpacity
         style={[
           styles.favoriteWrapper,
           {
             backgroundColor: colors.card,
           },
         ]}
+        activeOpacity={0.8}
+        onPress={() => navigation.navigate("PlaceStorage")}
       >
         <View style={styles.favoriteHeader}>
           <Text
@@ -195,13 +214,18 @@ export default function MyPage() {
           </Text>
         </View>
 
-        <View
+        <TouchableOpacity
           style={[
             styles.placeCard,
             {
               backgroundColor: colors.innerCard,
             },
           ]}
+          activeOpacity={0.8}
+          onPress={(e) => {
+            e.stopPropagation();
+            console.log("장소 상세정보 : 서울숲");
+          }}
         >
           <Text
             style={[
@@ -212,17 +236,22 @@ export default function MyPage() {
               },
             ]}
           >
-            온길 숲속 식당
+            서울숲
           </Text>
-        </View>
+        </TouchableOpacity>
 
-        <View
+        <TouchableOpacity
           style={[
             styles.placeCard,
             {
               backgroundColor: colors.innerCard,
             },
           ]}
+          activeOpacity={0.8}
+          onPress={(e) => {
+            e.stopPropagation();
+            console.log("장소 상세정보 : 경복궁");
+          }}
         >
           <Text
             style={[
@@ -233,10 +262,10 @@ export default function MyPage() {
               },
             ]}
           >
-            온길 숲속 식당
+            경복궁
           </Text>
-        </View>
-      </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
 
       {/* 하단 탭바 */}
       <View
@@ -290,6 +319,52 @@ export default function MyPage() {
                   </Text>
                 </TouchableOpacity>
       </View>
+
+      {showProfileEdit && (
+        <Pressable
+          style={styles.overlay}
+          onPress={() => setShowProfileEdit(false)}
+        >
+          <Pressable
+            style={[
+              styles.profileEditSheet,
+              {
+                backgroundColor: isDark ? '#222222' : '#FFFFFF',
+              },
+            ]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <Text
+              style={[
+                styles.sheetTitle,
+                {
+                  color: isDark ? '#FFFFFF' : '#000000',
+                  fontSize: fontSize + 4,
+                },
+              ]}
+            >
+              프로필 사진 변경
+            </Text>
+
+            <View style={styles.profileOptions}>
+              {profileImages.map((image, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    setProfileImage(image);
+                    setShowProfileEdit(false);
+                  }}
+                >
+                  <Image
+                    source={image}
+                    style={styles.profileBox}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Pressable>
+        </Pressable>
+      )}
     </SafeAreaView>
   );
 }
@@ -314,7 +389,6 @@ const styles = StyleSheet.create({
     width: 170,
     height: 170,
     borderRadius: 85,
-    backgroundColor: "#ddd",
     marginBottom: 15,
   },
 
@@ -436,6 +510,41 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-end',
+  },
+
+  profileEditSheet: {
+    height: 260,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    padding: 24,
+  },
+
+  sheetTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+
+  profileOptions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 25,
+  },
+
+  profileBox: {
+    width: 55,
+    height: 55,
+    borderRadius: 15,
   },
 
 });
