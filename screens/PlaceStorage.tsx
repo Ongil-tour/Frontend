@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import { useSettingStore } from '../store/settingStore';
+import BottomTabBar from "../components/BottomTabBar";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-
-import { useSettingStore } from '../store/settingStore';
 
 export default function PlaceStorage() {
   const navigation = useNavigation();
@@ -79,159 +79,161 @@ export default function PlaceStorage() {
       ]}
     >
 
-      {/* 상단 */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-        >
+      <View style={styles.content}>
+        {/* 상단 */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+          >
+            <Text
+              style={[
+                styles.back,
+                {
+                  color: colors.text,
+                  fontSize: fontSize + 15,
+                },
+              ]}
+            >
+              ‹
+            </Text>
+          </TouchableOpacity>
           <Text
             style={[
-              styles.back,
+              styles.title,
               {
                 color: colors.text,
-                fontSize: fontSize + 15,
+                fontSize: fontSize + 8,
               },
             ]}
           >
-            ‹
+            장소 보관함
           </Text>
-        </TouchableOpacity>
-        <Text
+        </View>
+
+        <View style={styles.tabContainer}>
+          {tabs.map((tab) => (
+            <TouchableOpacity
+              key={tab.id}
+              style={styles.tab}
+              onPress={() => setSelectedTab(tab.id)}
+            >
+
+              <Text
+                style={[
+                  styles.tabText,
+                  {
+                    color: colors.text,
+                    opacity: selectedTab === tab.id ? 1 : 0.4,
+                    fontSize: fontSize,
+                  }
+                ]}
+              >
+                {tab.title}
+              </Text>
+
+              {
+                selectedTab === tab.id &&
+                (
+                  <View
+                    style={[
+                      styles.underline,
+                      {
+                        backgroundColor: colors.text,
+                      }
+                    ]}
+                  />
+                )
+              }
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* 장소 카드 */}
+        <TouchableOpacity
           style={[
-            styles.title,
+            styles.placeCard,
             {
-              color: colors.text,
-              fontSize: fontSize + 8,
+              backgroundColor: colors.card,
             },
           ]}
         >
-          장소 보관함
-        </Text>
-      </View>
 
-      <View style={styles.tabContainer}>
-      {tabs.map((tab)=>(
-        <TouchableOpacity
-          key={tab.id}
-          style={styles.tab}
-          onPress={() => setSelectedTab(tab.id)}
-        >
-
-          <Text
-            style={[
-              styles.tabText,
-              {
-                color: colors.text,
-                opacity: selectedTab === tab.id ? 1 : 0.4,
-                fontSize: fontSize,
-              }
-            ]}
+          <TouchableOpacity
+            style={styles.starButton}
+            onPress={() => setBookmarked(!bookmarked)}
           >
-            {tab.title}
-          </Text>
-
-          {
-            selectedTab === tab.id &&
-            (
-              <View
-                style={[
-                  styles.underline,
-                  {
-                    backgroundColor: colors.text,
-                  }
-                ]}
-              />
-            )
-          }
-        </TouchableOpacity>
-      ))}
-      </View>
-
-      {/* 장소 카드 */}
-      <TouchableOpacity
-        style={[
-          styles.placeCard,
-          {
-            backgroundColor: colors.card,
-          },
-        ]}
-      >
-
-        <TouchableOpacity
-          style={styles.starButton}
-          onPress={() => setBookmarked(!bookmarked)}
-        >
-          <Text
-            style={[
-              styles.star,
-              {
-                color: bookmarked ? "#FFD700" : "#D3D3D3",
-              },
-            ]}
-          >
-            {bookmarked ? "★" : "☆"}
-          </Text>
-        </TouchableOpacity>
-        
-        <View style={styles.info}>
-
-        <View style={styles.topRow}>
-          <Text
-            style={[
-              styles.placeName,
-              {
-                color: colors.text,
-                fontSize: fontSize + 2,
-              },
-            ]}
-          >
-            {currentPlaces[0].name}
-          </Text>
-        </View>
-
-          <Text
-            style={[
-              styles.address,
-              {
-                color: colors.subText,
-                fontSize: fontSize - 2,
-              },
-            ]}
-          >
-            {currentPlaces[0].address}
-          </Text>
-
-          <View style={styles.barrierContainer}>
-            <View 
+            <Text
               style={[
-                styles.barrierBox,
+                styles.star,
                 {
-                  backgroundColor: colors.barrier,
+                  color: bookmarked ? "#FFD700" : "#D3D3D3",
                 },
               ]}
-            />
+            >
+              {bookmarked ? "★" : "☆"}
+            </Text>
+          </TouchableOpacity>
 
-          <View 
-            style={[
-              styles.barrierBox,
-              {
-                backgroundColor: colors.barrier,
-              },
-            ]}
-          />
+          <View style={styles.info}>
 
-          <View 
-            style={[
-              styles.barrierBox,
-              {
-                backgroundColor: colors.barrier,
-              },
-            ]}
-          />
-        </View>
+            <View style={styles.topRow}>
+              <Text
+                style={[
+                  styles.placeName,
+                  {
+                    color: colors.text,
+                    fontSize: fontSize + 2,
+                  },
+                ]}
+              >
+                {currentPlaces[0].name}
+              </Text>
+            </View>
+
+            <Text
+              style={[
+                styles.address,
+                {
+                  color: colors.subText,
+                  fontSize: fontSize - 2,
+                },
+              ]}
+            >
+              {currentPlaces[0].address}
+            </Text>
+
+            <View style={styles.barrierContainer}>
+              <View
+                style={[
+                  styles.barrierBox,
+                  {
+                    backgroundColor: colors.barrier,
+                  },
+                ]}
+              />
+
+              <View
+                style={[
+                  styles.barrierBox,
+                  {
+                    backgroundColor: colors.barrier,
+                  },
+                ]}
+              />
+
+              <View
+                style={[
+                  styles.barrierBox,
+                  {
+                    backgroundColor: colors.barrier,
+                  },
+                ]}
+              />
+            </View>
+          </View>
+        </TouchableOpacity>
       </View>
-    </TouchableOpacity>
-
+    <BottomTabBar activeTab="storage" />
     </View>
   );
 }
@@ -239,7 +241,11 @@ export default function PlaceStorage() {
 const styles = StyleSheet.create({
   container:{
     flex:1,
-    paddingHorizontal:20,
+  },
+
+  content: {
+    flex: 1,
+    padding: 20,
   },
 
   header:{
@@ -264,14 +270,6 @@ const styles = StyleSheet.create({
     alignItems:'center',
     padding:15,
     position:"relative",
-  },
-
-  imageBox:{
-    width:80,
-    height:80,
-    borderRadius:12,
-    justifyContent:'center',
-    alignItems:'center',
   },
 
   info:{

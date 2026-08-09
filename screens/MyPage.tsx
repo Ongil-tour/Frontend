@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSettingStore } from "../store/settingStore";
+import BottomTabBar from "../components/BottomTabBar";
 import {
   SafeAreaView,
   View,
@@ -53,153 +54,118 @@ export default function MyPage() {
         },
       ]}
     >
-      {/* 제목 */}
-      <Text
-        style={[
-          styles.title,
-          {
-            color: colors.text,
-            fontSize: sizes.title,
-          },
-        ]}
-      >
-        마이페이지
-      </Text>
-
-      {/* 프로필 */}
-      <View style={styles.profileContainer}>
-        <View style={styles.profileWrapper}>
-          <Image
-            source={profileImage}
-            style={styles.profileImage}
-          />
-
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => setShowProfileEdit(true)}
-          >
-            <Text style={styles.editText}>✎</Text>
-          </TouchableOpacity>
-        </View>
-
+      <View style={styles.content}>
+        {/* 제목 */}
         <Text
           style={[
-            styles.name,
+            styles.title,
             {
               color: colors.text,
-              fontSize: sizes.name,
+              fontSize: sizes.title,
             },
           ]}
         >
-          문서은님
+          마이페이지
         </Text>
 
-        <Text
-          style={[
-            styles.email,
-            {
-              color: colors.subText,
-              fontSize: sizes.small,
-            },
-          ]}
-        >
-          ez_trip@example.com
-        </Text>
-      </View>
+        {/* 프로필 */}
+        <View style={styles.profileContainer}>
+          <View style={styles.profileWrapper}>
+            <Image
+              source={profileImage}
+              style={styles.profileImage}
+            />
 
-      {/* 구분선 */}
-      <View
-        style={[
-          styles.divider,
-          {
-            backgroundColor: colors.divider,
-          },
-        ]}
-      />
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => setShowProfileEdit(true)}
+            >
+              <Text style={styles.editText}>✎</Text>
+            </TouchableOpacity>
+          </View>
 
-      {/* 다크모드 */}
-      <View
-        style={[
-          styles.menuBox,
-          {
-            backgroundColor: colors.card,
-          },
-        ]}
-      >
-        <Text
-          style={[
-            styles.menuText,
-            {
-                color: colors.text,
-                fontSize: sizes.normal,
-            },
-          ]}
-        >
-          다크모드
-        </Text>
-
-        <Switch
-          value={isDark}
-          onValueChange={setIsDark}
-        />
-      </View>
-
-      {/* 설정 */}
-      <TouchableOpacity
-        style={[
-          styles.menuBox,
-          {
-            backgroundColor: colors.card,
-          }, 
-        ]}
-        onPress={() => navigation.navigate("Setting")}
-      >
-        <Text
-          style={[
-            styles.menuText,
-            {
-                color: colors.text,
-                fontSize: sizes.normal,
-            },
-          ]}
-        >
-          설정
-        </Text>
-
-        <Text
-          style={[
-            styles.arrow,
-            {
-              color: colors.subText,
-            },
-          ]}
-        >
-          ›
-        </Text>
-      </TouchableOpacity>
-
-      {/* 즐겨찾는 장소 */}
-      <TouchableOpacity
-        style={[
-          styles.favoriteWrapper,
-          {
-            backgroundColor: colors.card,
-          },
-        ]}
-        activeOpacity={0.8}
-        onPress={() => navigation.navigate("PlaceStorage")}
-      >
-        <View style={styles.favoriteHeader}>
           <Text
             style={[
-              styles.favoriteTitle,
+              styles.name,
+              {
+                color: colors.text,
+                fontSize: sizes.name,
+              },
+            ]}
+          >
+            문서은님
+          </Text>
+
+          <Text
+            style={[
+              styles.email,
+              {
+                color: colors.subText,
+                fontSize: sizes.small,
+              },
+            ]}
+          >
+            ez_trip@example.com
+          </Text>
+        </View>
+
+        {/* 구분선 */}
+        <View
+          style={[
+            styles.divider,
+            {
+              backgroundColor: colors.divider,
+            },
+          ]}
+        />
+
+        {/* 다크모드 */}
+        <View
+          style={[
+            styles.menuBox,
+            {
+              backgroundColor: colors.card,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.menuText,
               {
                 color: colors.text,
                 fontSize: sizes.normal,
               },
             ]}
           >
-            즐겨찾는 장소
+            다크모드
+          </Text>
+
+          <Switch
+            value={isDark}
+            onValueChange={setIsDark}
+          />
+        </View>
+
+        {/* 설정 */}
+        <TouchableOpacity
+          style={[
+            styles.menuBox,
+            {
+              backgroundColor: colors.card,
+            },
+          ]}
+          onPress={() => navigation.navigate("Setting")}
+        >
+          <Text
+            style={[
+              styles.menuText,
+              {
+                color: colors.text,
+                fontSize: sizes.normal,
+              },
+            ]}
+          >
+            설정
           </Text>
 
           <Text
@@ -212,159 +178,144 @@ export default function MyPage() {
           >
             ›
           </Text>
-        </View>
+        </TouchableOpacity>
 
+        {/* 즐겨찾는 장소 */}
         <TouchableOpacity
           style={[
-            styles.placeCard,
+            styles.favoriteWrapper,
             {
-              backgroundColor: colors.innerCard,
+              backgroundColor: colors.card,
             },
           ]}
           activeOpacity={0.8}
-          onPress={(e) => {
-            e.stopPropagation();
-            console.log("장소 상세정보 : 서울숲");
-          }}
+          onPress={() => navigation.navigate("PlaceStorage")}
         >
-          <Text
-            style={[
-              styles.placeName,
-              {
-                color: colors.text,
-                fontSize: sizes.small,
-              },
-            ]}
-          >
-            서울숲
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.placeCard,
-            {
-              backgroundColor: colors.innerCard,
-            },
-          ]}
-          activeOpacity={0.8}
-          onPress={(e) => {
-            e.stopPropagation();
-            console.log("장소 상세정보 : 경복궁");
-          }}
-        >
-          <Text
-            style={[
-              styles.placeName,
-              {
-                color: colors.text,
-                fontSize: sizes.small,
-              },
-            ]}
-          >
-            경복궁
-          </Text>
-        </TouchableOpacity>
-      </TouchableOpacity>
-
-      {/* 하단 탭바 */}
-      <View
-        style={[
-          styles.bottomTab,
-          {
-            backgroundColor: colors.background,
-            borderColor: colors.divider,
-          },
-        ]}
-      >
-        <TouchableOpacity style={styles.tabItem}>
-                  <Text
-                    style={[
-                      styles.tabText,
-                      {
-                        color: colors.subText,
-                        fontSize: sizes.normal,
-                      },
-                    ]}
-                  >
-                  탐색
-                  </Text>
-                </TouchableOpacity>
-        
-                <TouchableOpacity style={styles.tabItem}>
-                  <Text
-                    style={[
-                      styles.tabText,
-                      {
-                        color: colors.subText,
-                        fontSize: sizes.normal,
-                      },
-                    ]}
-                  >
-                  보관함
-                  </Text>
-                </TouchableOpacity>
-        
-                <TouchableOpacity style={styles.tabItem}>
-                  <Text
-                    style={[
-                      styles.activeTab,
-                      {
-                        color: colors.text,
-                        fontSize: sizes.normal,
-                      },
-                    ]}
-                  >
-                  마이페이지
-                  </Text>
-                </TouchableOpacity>
-      </View>
-
-      {showProfileEdit && (
-        <Pressable
-          style={styles.overlay}
-          onPress={() => setShowProfileEdit(false)}
-        >
-          <Pressable
-            style={[
-              styles.profileEditSheet,
-              {
-                backgroundColor: isDark ? '#222222' : '#FFFFFF',
-              },
-            ]}
-            onPress={(e) => e.stopPropagation()}
-          >
+          <View style={styles.favoriteHeader}>
             <Text
               style={[
-                styles.sheetTitle,
+                styles.favoriteTitle,
                 {
-                  color: isDark ? '#FFFFFF' : '#000000',
-                  fontSize: fontSize + 4,
+                  color: colors.text,
+                  fontSize: sizes.normal,
                 },
               ]}
             >
-              프로필 사진 변경
+              즐겨찾는 장소
             </Text>
 
-            <View style={styles.profileOptions}>
-              {profileImages.map((image, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => {
-                    setProfileImage(image);
-                    setShowProfileEdit(false);
-                  }}
-                >
-                  <Image
-                    source={image}
-                    style={styles.profileBox}
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
+            <Text
+              style={[
+                styles.arrow,
+                {
+                  color: colors.subText,
+                },
+              ]}
+            >
+              ›
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.placeCard,
+              {
+                backgroundColor: colors.innerCard,
+              },
+            ]}
+            activeOpacity={0.8}
+            onPress={(e) => {
+              e.stopPropagation();
+              console.log("장소 상세정보 : 서울숲");
+            }}
+          >
+            <Text
+              style={[
+                styles.placeName,
+                {
+                  color: colors.text,
+                  fontSize: sizes.small,
+                },
+              ]}
+            >
+              서울숲
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.placeCard,
+              {
+                backgroundColor: colors.innerCard,
+              },
+            ]}
+            activeOpacity={0.8}
+            onPress={(e) => {
+              e.stopPropagation();
+              console.log("장소 상세정보 : 경복궁");
+            }}
+          >
+            <Text
+              style={[
+                styles.placeName,
+                {
+                  color: colors.text,
+                  fontSize: sizes.small,
+                },
+              ]}
+            >
+              경복궁
+            </Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+
+        {showProfileEdit && (
+          <Pressable
+            style={styles.overlay}
+            onPress={() => setShowProfileEdit(false)}
+          >
+            <Pressable
+              style={[
+                styles.profileEditSheet,
+                {
+                  backgroundColor: isDark ? '#222222' : '#FFFFFF',
+                },
+              ]}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <Text
+                style={[
+                  styles.sheetTitle,
+                  {
+                    color: isDark ? '#FFFFFF' : '#000000',
+                    fontSize: fontSize + 4,
+                  },
+                ]}
+              >
+                프로필 사진 변경
+              </Text>
+
+              <View style={styles.profileOptions}>
+                {profileImages.map((image, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => {
+                      setProfileImage(image);
+                      setShowProfileEdit(false);
+                    }}
+                  >
+                    <Image
+                      source={image}
+                      style={styles.profileBox}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Pressable>
           </Pressable>
-        </Pressable>
-      )}
+        )}
+      </View>
+      <BottomTabBar activeTab="mypage" />
     </SafeAreaView>
   );
 }
@@ -372,7 +323,6 @@ export default function MyPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
   },
 
   title: {
@@ -460,24 +410,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 
-  bottomTab: {
-    marginTop: "auto",
-    borderTopWidth: 1,
-    borderColor: "#ddd",
-    paddingTop: 15,
-    paddingBottom: 15,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  tabText: {
-    color: "gray",
-  },
-
-  activeTab: {
-    fontWeight: "bold",
-  },
-
   profileWrapper: {
     position: "relative",
     width: 170,
@@ -504,12 +436,6 @@ const styles = StyleSheet.create({
     color: "#555",
     fontSize: 18,
     fontWeight: "bold",
-  },
-
-  tabItem: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
   },
 
   overlay: {
@@ -545,6 +471,11 @@ const styles = StyleSheet.create({
     width: 55,
     height: 55,
     borderRadius: 15,
+  },
+
+  content: {
+    flex: 1,
+    padding: 20,
   },
 
 });
