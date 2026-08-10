@@ -30,6 +30,16 @@ const mapHtml = `
     var currentLocationOverlay = null;
     var API_BASE_URL = ${JSON.stringify(API_BASE_URL ?? '')};
 
+    var GREEN_PIN_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="38" viewBox="0 0 28 38">' +
+      '<path d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.268 21.732 0 14 0z" fill="#22A45D"/>' +
+      '<circle cx="14" cy="14" r="5" fill="white"/>' +
+      '</svg>';
+    var markerImage = new kakao.maps.MarkerImage(
+      'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(GREEN_PIN_SVG),
+      new kakao.maps.Size(28, 38),
+      { offset: new kakao.maps.Point(14, 38) }
+    );
+
     function clearMarkers() {
       markers.forEach(function(m) { m.setMap(null); });
       markers = [];
@@ -38,6 +48,7 @@ const mapHtml = `
     function addMarkerAt(data) {
       var marker = new kakao.maps.Marker({
         position: new kakao.maps.LatLng(data.lat, data.lng),
+        image: markerImage,
         map: map
       });
       kakao.maps.event.addListener(marker, 'click', function() {
@@ -179,7 +190,7 @@ const mapHtml = `
       }
       currentLocationOverlay = new kakao.maps.CustomOverlay({
         position: position,
-        content: '<div style="width:16px;height:16px;border-radius:50%;background:#4285F4;border:3px solid white;box-shadow:0 0 0 2px rgba(66,133,244,0.35),0 1px 4px rgba(0,0,0,0.35);"></div>',
+        content: '<div style="width:16px;height:16px;border-radius:50%;background:#22A45D;border:3px solid white;box-shadow:0 0 0 2px rgba(34,164,93,0.35),0 1px 4px rgba(0,0,0,0.35);"></div>',
         zIndex: 10
       });
       currentLocationOverlay.setMap(map);
@@ -200,9 +211,9 @@ const mapHtml = `
         center: new kakao.maps.LatLng(lat, lng),
         radius: radiusM,
         strokeWeight: 1,
-        strokeColor: '#4285F4',
+        strokeColor: '#22A45D',
         strokeOpacity: 0.5,
-        fillColor: '#4285F4',
+        fillColor: '#22A45D',
         fillOpacity: 0.15
       });
       radiusCircle.setMap(map);
@@ -278,7 +289,7 @@ const mapHtml = `
       if (clickMarker) {
         clickMarker.setMap(null);
       }
-      clickMarker = new kakao.maps.Marker({ position: latlng, map: map });
+      clickMarker = new kakao.maps.Marker({ position: latlng, image: markerImage, map: map });
 
       findNearestPoi(lat, lng, function(nearestPlace) {
         if (nearestPlace) {

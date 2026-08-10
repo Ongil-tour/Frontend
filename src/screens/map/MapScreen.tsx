@@ -130,21 +130,21 @@ export default function MapScreen() {
           ))}
         </ScrollView>
       </View>
-      <View style={styles.radiusBar}>
-        {RADIUS_OPTIONS.map((km) => (
-          <TouchableOpacity
-            key={km}
-            style={[styles.radiusButton, selectedRadiusKm === km && styles.radiusButtonActive]}
-            onPress={() => handleRadiusPress(km)}
-          >
-            <Text style={[styles.radiusText, selectedRadiusKm === km && styles.radiusTextActive]}>
-              {km}km
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
       <View style={styles.mapContainer}>
         <KakaoMapView ref={mapRef} onMessage={handleMessage} />
+        <View style={styles.radiusOverlay}>
+          {RADIUS_OPTIONS.map((km) => (
+            <TouchableOpacity
+              key={km}
+              style={[styles.radiusButton, selectedRadiusKm === km && styles.radiusButtonActive]}
+              onPress={() => handleRadiusPress(km)}
+            >
+              <Text style={[styles.radiusText, selectedRadiusKm === km && styles.radiusTextActive]}>
+                {km}km
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
         <View style={styles.zoomControls}>
           <TouchableOpacity style={styles.zoomButton} onPress={() => mapRef.current?.zoomIn()}>
             <Text style={styles.zoomButtonText}>+</Text>
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f2f2f2',
   },
   categoryButtonActive: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#22A45D',
   },
   categoryText: {
     fontSize: 14,
@@ -217,23 +217,25 @@ const styles = StyleSheet.create({
   categoryTextActive: {
     color: 'white',
   },
-  radiusBar: {
+  radiusOverlay: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
     flexDirection: 'row',
     gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: 'white',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e5e5e5',
   },
   radiusButton: {
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: '#f2f2f2',
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   radiusButtonActive: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#22A45D',
   },
   radiusText: {
     fontSize: 13,
