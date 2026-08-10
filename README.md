@@ -178,6 +178,38 @@ npx expo run:ios   # 또는 run:android
 
 ---
 
+## 카카오맵 연동 (WebView 방식)
+
+**⚠️ 중요: `@react-native-kakao/map`은 사용하지 않습니다.**
+
+`@react-native-kakao/map`(마지막 버전 2.2.7)은 라이브러리 제작자가 이후 버전에서 지도 패키지 자체를 저장소에서 제거했고, New Architecture(Fabric)를 지원하지 않아 최신 React Native(0.86+)에서 `The package @react-native-kakao/map only supports fabric` 에러가 발생합니다. 사실상 유지보수가 중단된 패키지입니다.
+
+**대신 WebView + Kakao Maps JavaScript SDK 방식을 사용합니다.**
+
+### 세팅 방법
+
+1. `react-native-webview` 설치: `npx expo install react-native-webview`
+2. 카카오 디벨로퍼스에서 **JavaScript 키** 발급 (네이티브 앱 키 아님)
+3. `.env`에 추가:
+   ```
+   EXPO_PUBLIC_KAKAO_JS_KEY=발급받은_JavaScript_키
+   ```
+4. 카카오 디벨로퍼스 → 플랫폼 키 → JavaScript 키 → **Web 플랫폼 도메인**에 등록:
+   ```
+   http://localhost
+   https://localhost
+   ```
+5. 카카오 디벨로퍼스 → **[제품 설정] → [카카오맵]** 메뉴에서 **API 활성화** (기본값이 비활성 상태라 반드시 켜야 함)
+6. WebView 사용 시 **`baseUrl`을 반드시 지정**할 것 (`baseUrl` 없이 `source={{ html }}`만 쓰면 iOS에서 외부 스크립트 로딩이 막히는 이슈가 있음):
+   ```tsx
+   source={{ html: mapHtml, baseUrl: 'https://localhost' }}
+   ```
+
+### 트러블슈팅 참고
+
+- `NotAuthorizedError: App disabled OPEN_MAP_AND_LOCAL service` → 카카오맵 API 활성화 안 된 상태 (위 5번 확인)
+- `kakao is not defined` → SDK 스크립트 로딩 실패. `baseUrl` 누락, 도메인 미등록, 또는 API 비활성화가 원인일 확률이 높음
+
 ## 협업 규칙
 
 - 코드는 Git으로 공유, 각자 담당 플랫폼(한성=iOS, 소희=Android)에서 로컬 빌드로 확인
