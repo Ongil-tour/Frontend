@@ -1,12 +1,12 @@
 import React from "react";
+import { useNavigation } from "@react-navigation/native";
+import { useSettingStore } from "../store/settingStore";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { useSettingStore } from "../store/settingStore";
 
 type TabName = "explore" | "storage" | "mypage";
 
@@ -37,6 +37,8 @@ export default function BottomTabBar({
       navigation.navigate("MyPage");
       return;
     }
+
+    // 탐색은 지금 연결하지 않음
   };
 
   return (
@@ -49,6 +51,7 @@ export default function BottomTabBar({
         },
       ]}
     >
+      {/* 탐색 */}
       <TouchableOpacity style={styles.tabItem}>
         <Text
           style={[
@@ -68,6 +71,7 @@ export default function BottomTabBar({
         </Text>
       </TouchableOpacity>
 
+      {/* 보관함 */}
       <TouchableOpacity
         style={styles.tabItem}
         onPress={() => goToTab("storage")}
@@ -90,6 +94,7 @@ export default function BottomTabBar({
         </Text>
       </TouchableOpacity>
 
+      {/* 마이페이지 */}
       <TouchableOpacity
         style={styles.tabItem}
         onPress={() => goToTab("mypage")}
@@ -117,10 +122,19 @@ export default function BottomTabBar({
 
 const styles = StyleSheet.create({
   container: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+
     height: 65,
+
     borderTopWidth: 1,
+
     flexDirection: "row",
     alignItems: "center",
+
+    zIndex: 999,
   },
 
   tabItem: {

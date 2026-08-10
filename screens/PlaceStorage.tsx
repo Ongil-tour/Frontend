@@ -18,7 +18,7 @@ export default function PlaceStorage() {
     subText: isDark ? '#BBBBBB' : '#777777',
     card: isDark ? '#2A2A2A' : '#F5F5F5',
     image: isDark ? '#444444' : '#D9D9D9',
-    barrier : isDark ? '#444444' : '#FFFFFF',
+    iconBackground: isDark ? "#3A5A46" : "#DDF2E3",
   };
   const [bookmarked, setBookmarked] = useState(true);
   const [selectedTab, setSelectedTab] =
@@ -30,6 +30,7 @@ export default function PlaceStorage() {
         id: 1,
         name: '서울숲',
         address: '서울특별시 성동구',
+        icons: ['♿', '🚻', '🅿️'],
       },
     ],
 
@@ -38,6 +39,7 @@ export default function PlaceStorage() {
         id: 2,
         name: '남산서울타워',
         address: '서울특별시 용산구',
+        icons: ['🛗', '🐕', '🍼'],
       },
     ],
 
@@ -46,9 +48,11 @@ export default function PlaceStorage() {
         id: 3,
         name: '경복궁',
         address: '서울특별시 종로구',
+        icons: ['♿', '🛗', '🚻'],
       },
     ],
   };
+
   const currentPlaces = places[selectedTab];
 
   const tabs: {
@@ -203,37 +207,28 @@ export default function PlaceStorage() {
             </Text>
 
             <View style={styles.barrierContainer}>
-              <View
-                style={[
-                  styles.barrierBox,
-                  {
-                    backgroundColor: colors.barrier,
-                  },
-                ]}
-              />
-
-              <View
-                style={[
-                  styles.barrierBox,
-                  {
-                    backgroundColor: colors.barrier,
-                  },
-                ]}
-              />
-
-              <View
-                style={[
-                  styles.barrierBox,
-                  {
-                    backgroundColor: colors.barrier,
-                  },
-                ]}
-              />
+              {currentPlaces[0].icons.map((icon, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.barrierBox,
+                    {
+                      backgroundColor: colors.iconBackground,
+                    },
+                  ]}
+                >
+                  <Text style={styles.barrierIcon}>
+                    {icon}
+                  </Text>
+                </View>
+              ))}
             </View>
           </View>
         </TouchableOpacity>
       </View>
-    <BottomTabBar activeTab="storage" />
+
+      <BottomTabBar activeTab="storage" />
+
     </View>
   );
 }
@@ -326,12 +321,17 @@ const styles = StyleSheet.create({
     marginTop:0,
   },
 
-  barrierBox:{
-    width:30,
-    height:30,
-    borderRadius:8,
-    backgroundColor:'#DDDDDD',
-    marginRight:6,
+  barrierBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    marginRight: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  barrierIcon: {
+    fontSize: 21,
   },
 
 });

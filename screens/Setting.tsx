@@ -2,9 +2,9 @@ import React from "react";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSettingStore } from "../store/settingStore";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomTabBar from "../components/BottomTabBar";
 import {
-  SafeAreaView,
   View,
   Text,
   StyleSheet,
@@ -43,15 +43,25 @@ export default function Setting() {
   };
 
   const confirmAction = () => {
-    console.log('${modalType} 실행');
-    console.log("modalType:", modalType);
+    if (modalType === "로그아웃")
+      console.log("로그아웃 실행");
+    else if (modalType === "회원 탈퇴")
+      console.log("회원 탈퇴 실행");
+    else if (modalType === "검색 기록")
+      console.log("검색 기록 삭제 실행");
+    else if (modalType === "즐겨찾기")
+      console.log("즐겨찾기 삭제 실행");
+    
     setModalVisible(false);
+
     setToast(
-      modalType === "로그아웃"
+      modalType === "검색 기록"
+        ? "검색 기록 전체가 삭제되었습니다."
+        : modalType === "즐겨찾기"
+        ? "즐겨찾기 전체가 삭제되었습니다."
+        : modalType === "로그아웃"
         ? "로그아웃되었습니다."
-        : modalType === "회원 탈퇴"
-        ? "회원 탈퇴가 완료되었습니다."
-        : `${modalType}가 삭제되었습니다.`
+        : "회원 탈퇴가 완료되었습니다."
     );
 
     setTimeout(() => {
@@ -68,352 +78,352 @@ export default function Setting() {
         },
       ]}
     >
-
-      <View style={styles.content}>
-        {/* 상단 */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          >
-            <Text
-              style={[
-                styles.back,
-                {
-                  color: colors.text,
-                  fontSize: sizes.title + 6,
-                },
-              ]}
-            >
-              ‹
-            </Text>
-          </TouchableOpacity>
-
+      {/* 상단 */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <Text
             style={[
-              styles.title,
+              styles.back,
               {
                 color: colors.text,
-                fontSize: sizes.title,
+                fontSize: sizes.title + 6,
               },
             ]}
           >
-            설정
+            ‹
           </Text>
-        </View>
+        </TouchableOpacity>
 
-        {/* 화면 설정 */}
         <Text
           style={[
-            styles.section,
+            styles.title,
             {
-              color: colors.subText,
-              fontSize: sizes.section,
+              color: colors.text,
+              fontSize: sizes.title,
             },
           ]}
         >
-          화면 설정
+          설정
+        </Text>
+      </View>
+
+      {/* 화면 설정 */}
+      <Text
+        style={[
+          styles.section,
+          {
+            color: colors.subText,
+            fontSize: sizes.section,
+          },
+        ]}
+      >
+        화면 설정
+      </Text>
+
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: colors.card,
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.label,
+            {
+              color: colors.text,
+              fontSize: sizes.normal,
+            },
+          ]}
+        >
+          글자크기
         </Text>
 
         <View
           style={[
-            styles.card,
+            styles.sizeContainer,
             {
-              backgroundColor: colors.card,
+              backgroundColor: colors.buttonBackground,
             },
           ]}
         >
-          <Text
+          <TouchableOpacity
             style={[
-              styles.label,
-              {
+              styles.sizeBtn,
+              fontSize === 15 && {
+                backgroundColor: colors.innerCard,
+                borderRadius: 10,
+              },
+            ]}
+            onPress={() => setFontSize(15)}
+          >
+            <Text
+              style={{
+                fontSize: 15,
                 color: colors.text,
-                fontSize: sizes.normal,
-              },
-            ]}
-          >
-            글자크기
-          </Text>
+              }}
+            >
+              기본
+            </Text>
+          </TouchableOpacity>
 
-          <View
+          <TouchableOpacity
             style={[
-              styles.sizeContainer,
-              {
-                backgroundColor: colors.buttonBackground,
+              styles.sizeBtn,
+              fontSize === 17 && {
+                backgroundColor: colors.innerCard,
+                borderRadius: 10,
               },
             ]}
+            onPress={() => setFontSize(17)}
           >
-            <TouchableOpacity
-              style={[
-                styles.sizeBtn,
-                fontSize === 15 && {
-                  backgroundColor: colors.innerCard,
-                  borderRadius: 10,
-                },
-              ]}
-              onPress={() => setFontSize(15)}
+            <Text
+              style={{
+                fontSize: 17,
+                color: colors.text,
+              }}
             >
-              <Text
-                style={{
-                  fontSize: 15,
-                  color: colors.text,
-                }}
-              >
-                기본
-              </Text>
-            </TouchableOpacity>
+              크게
+            </Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.sizeBtn,
-                fontSize === 17 && {
-                  backgroundColor: colors.innerCard,
-                  borderRadius: 10,
-                },
-              ]}
-              onPress={() => setFontSize(17)}
+          <TouchableOpacity
+            style={[
+              styles.sizeBtn,
+              fontSize === 19 && {
+                backgroundColor: colors.innerCard,
+                borderRadius: 10,
+              },
+            ]}
+            onPress={() => setFontSize(19)}
+          >
+            <Text
+              style={{
+                fontSize: 19,
+                color: colors.text,
+              }}
             >
-              <Text
-                style={{
-                  fontSize: 17,
-                  color: colors.text,
-                }}
-              >
-                크게
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.sizeBtn,
-                fontSize === 19 && {
-                  backgroundColor: colors.innerCard,
-                  borderRadius: 10,
-                },
-              ]}
-              onPress={() => setFontSize(19)}
-            >
-              <Text
-                style={{
-                  fontSize: 19,
-                  color: colors.text,
-                }}
-              >
-                더 크게
-              </Text>
-            </TouchableOpacity>
-          </View>
+              더 크게
+            </Text>
+          </TouchableOpacity>
         </View>
+      </View>
 
-        {/* 기록 관리 */}
+      {/* 기록 관리 */}
+      <Text
+        style={[
+          styles.section,
+          {
+            color: colors.subText,
+            fontSize: sizes.section,
+          },
+        ]}
+      >
+        기록 관리
+      </Text>
+
+      <TouchableOpacity
+        style={[
+          styles.menu,
+          {
+            backgroundColor: colors.innerCard,
+            borderColor: colors.border,
+          },
+        ]}
+        onPress={() => openModal("검색 기록")}
+      >
         <Text
-          style={[
-            styles.section,
-            {
-              color: colors.subText,
-              fontSize: sizes.section,
-            },
-          ]}
+          style={{
+            color: colors.text,
+            fontSize: sizes.normal,
+          }}
         >
-          기록 관리
+          검색 기록 전체 삭제
         </Text>
-
-        <TouchableOpacity
-          style={[
-            styles.menu,
-            {
-              backgroundColor: colors.innerCard,
-              borderColor: colors.border,
-            },
-          ]}
-          onPress={() => openModal("검색 기록")}
-        >
-          <Text
-            style={{
-              color: colors.text,
-              fontSize: sizes.normal,
-            }}
-          >
-            검색 기록 전체 삭제
-          </Text>
-          <Text
-            style={{
-              color: colors.subText,
-            }}
-          >
-            ›
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.menu,
-            {
-              backgroundColor: colors.innerCard,
-              borderColor: colors.border,
-            },
-          ]}
-          onPress={() => openModal("즐겨찾기")}
-        >
-          <Text
-            style={{
-              color: colors.text,
-              fontSize: sizes.normal,
-            }}
-          >
-            즐겨찾기 전체 삭제
-          </Text>
-          <Text
-            style={{
-              color: colors.subText,
-            }}
-          >
-            ›
-          </Text>
-        </TouchableOpacity>
-
-        {/* 계정 */}
         <Text
-          style={[
-            styles.section,
-            {
-              color: colors.subText,
-              fontSize: sizes.section,
-            },
-          ]}
+          style={{
+            color: colors.subText,
+          }}
         >
-          계정
+        ›
         </Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.accountBtn}
-          onPress={() => openModal("로그아웃")}
+      <TouchableOpacity
+        style={[
+          styles.menu,
+          {
+            backgroundColor: colors.innerCard,
+            borderColor: colors.border,
+          },
+        ]}
+        onPress={() => openModal("즐겨찾기")}
+      >
+        <Text
+          style={{
+            color: colors.text,
+            fontSize: sizes.normal,
+          }}
         >
-          <Text
-            style={{
-              color: colors.text,
-              fontSize: sizes.normal,
-            }}
-          >
-            로그아웃
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.accountBtn}
-          onPress={() => openModal("회원 탈퇴")}
+        즐겨찾기 전체 삭제
+        </Text>
+        <Text
+          style={{
+            color: colors.subText,
+          }}
         >
-          <Text
-            style={{
-              color: colors.danger,
-              fontSize: sizes.normal,
-            }}
-          >
-            회원 탈퇴
-          </Text>
-        </TouchableOpacity>
+        ›
+        </Text>
+      </TouchableOpacity>
 
-        {/* 삭제 확인 모달 */}
-        <Modal
-          visible={modalVisible}
-          transparent
-          animationType="fade"
+      {/* 계정 */}
+      <Text
+        style={[
+          styles.section,
+          {
+            color: colors.subText,
+            fontSize: sizes.section,
+          },
+        ]}
+      >
+        계정
+      </Text>
+
+      <TouchableOpacity
+        style={styles.accountBtn}
+        onPress={() => openModal("로그아웃")}
+      >
+        <Text
+          style={{
+          color: colors.text,
+          fontSize: sizes.normal,
+        }}
+      >
+      로그아웃
+      </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.accountBtn}
+        onPress={() => openModal("회원 탈퇴")}
+      >
+        <Text
+          style={{
+            color: colors.danger,
+            fontSize: sizes.normal,
+          }}
         >
-          <View style={styles.modalBackground}>
+        회원 탈퇴
+        </Text>
+      </TouchableOpacity>
 
-            <View
-              style={[
-                styles.modalBox,
-                {
-                  backgroundColor: colors.card,
-                },
-              ]}
-            >
+      {/* 삭제 확인 모달 */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.modalBackground}>
 
-              <Text
-                style={[
-                  styles.modalTitle,
-                  {
-                    color: colors.text,
-                    fontSize: sizes.normal + 2,
-                  },
-                ]}
-              >
-                {modalType === "로그아웃" || modalType === "회원 탈퇴"
-                  ? modalType
-                  : `${modalType} 삭제`}
-              </Text>
-
-              <Text
-                style={[
-                  styles.modalText,
-                  {
-                    color: colors.subText,
-                    fontSize: sizes.normal,
-                  },
-                ]}
-              >
-                {modalType === "회원 탈퇴"
-                  ? "정말 회원 탈퇴하시겠습니까?\n탈퇴 후에는 계정을 복구할 수 없습니다."
-                  : modalType === "로그아웃"
-                    ? "정말 로그아웃하시겠습니까?"
-                    : "정말 삭제하시겠습니까?"}
-              </Text>
-              <View style={styles.modalButtons}>
-
-                <Pressable
-                  onPress={() => setModalVisible(false)}
-                >
-                  <Text
-                    style={{
-                      color: colors.subText,
-                      fontSize: sizes.normal,
-                    }}
-                  >
-                    취소
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={confirmAction}
-                >
-                  <Text
-                    style={{
-                      color: colors.text,
-                      fontSize: sizes.normal,
-                      fontWeight: "bold",
-                    }}
-                  >
-                    확인
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </Modal>
-
-        {/* 삭제 완료 알림 */}
-        {toast !== "" && (
           <View
             style={[
-              styles.toast,
+              styles.modalBox,
               {
                 backgroundColor: colors.card,
               },
             ]}
           >
-            <Text
-              style={{
+
+          <Text
+            style={[
+              styles.modalTitle,
+              {
                 color: colors.text,
+                fontSize: sizes.normal + 2,
+              },
+            ]}
+          >
+            {modalType === "로그아웃" || modalType === "회원 탈퇴"
+              ? modalType
+              : `${modalType} 삭제`}
+          </Text>
+
+          <Text
+            style={[
+              styles.modalText,
+              {
+                color: colors.subText,
                 fontSize: sizes.normal,
-              }}
-            >
-              {toast}
+              },
+            ]}
+          >
+            {modalType === "회원 탈퇴"
+              ? "정말 회원 탈퇴하시겠습니까?\n탈퇴 후에는 계정을 복구할 수 없습니다."
+              : modalType === "로그아웃"
+              ? "정말 로그아웃하시겠습니까?"
+              : "정말 삭제하시겠습니까?"}
             </Text>
+          <View style={styles.modalButtons}>
+
+            <Pressable
+              onPress={() => setModalVisible(false)}
+            >
+              <Text
+                style={{
+                  color: colors.subText,
+                  fontSize: sizes.normal,
+                }}
+              >
+                취소
+              </Text>
+            </Pressable>
+
+
+            <Pressable
+              onPress={confirmAction}
+            >
+              <Text
+                style={{
+                  color: colors.text,
+                  fontSize: sizes.normal,
+                  fontWeight:"bold",
+                }}
+              >
+                확인
+              </Text>
+            </Pressable>
           </View>
-        )}
+        </View>
       </View>
-      <BottomTabBar activeTab="mypage" />
+    </Modal>
+
+    {/* 삭제 완료 알림 */}
+    {toast !== "" && (
+      <View
+        style={[
+          styles.toast,
+          {
+            backgroundColor: colors.card,
+          },
+        ]}
+      >
+        <Text
+          style={{
+            color: colors.text,
+            fontSize: sizes.normal,
+          }}
+        >
+          {toast}
+        </Text>
+      </View>
+    )}
+
+    <BottomTabBar activeTab="mypage" />
+    
     </SafeAreaView>
   );
 }
@@ -422,10 +432,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-  },
-
-  content: {
-    flex: 1,
     padding: 20,
   },
 

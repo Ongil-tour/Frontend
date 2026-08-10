@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSettingStore } from "../store/settingStore";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomTabBar from "../components/BottomTabBar";
 import {
-  SafeAreaView,
   View,
   Text,
   StyleSheet,
@@ -21,6 +21,11 @@ const profileImages = [
   require("../assets/profile/profile4.png"),
 ];
 
+const placeIcons = {
+  서울숲: ['♿', '🚻', '🅿️'],
+  경복궁: ['♿', '🛗', '🚻'],
+};
+
 export default function MyPage() {
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -36,6 +41,7 @@ export default function MyPage() {
     divider: isDark ? "#555555" : "#DDDDDD",
     tab: isDark ? "#BDBDBD" : "#808080",
     activeTab: isDark ? "#FFFFFF" : "#000000",
+    iconBackground: isDark ? "#3A5A46" : "#DDF2E3",
   };
 
   const sizes = {
@@ -240,6 +246,22 @@ export default function MyPage() {
             >
               서울숲
             </Text>
+
+            <View style={styles.iconContainer}>
+              {placeIcons.서울숲.map((icon, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.iconBox,
+                    {
+                      backgroundColor: colors.iconBackground,
+                    },
+                  ]}
+                >
+                  <Text style={styles.iconText}>{icon}</Text>
+                </View>
+              ))}
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -266,6 +288,22 @@ export default function MyPage() {
             >
               경복궁
             </Text>
+
+            <View style={styles.iconContainer}>
+              {placeIcons.경복궁.map((icon, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.iconBox,
+                    {
+                      backgroundColor: colors.iconBackground,
+                    },
+                  ]}
+                >
+                  <Text style={styles.iconText}>{icon}</Text>
+                </View>
+              ))}
+            </View>
           </TouchableOpacity>
         </TouchableOpacity>
 
@@ -315,7 +353,9 @@ export default function MyPage() {
           </Pressable>
         )}
       </View>
+
       <BottomTabBar activeTab="mypage" />
+
     </SafeAreaView>
   );
 }
@@ -404,10 +444,30 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   placeName: {
     fontSize: 15,
+  },
+
+  iconContainer: {
+    flexDirection: "row",
+    marginLeft: "auto",
+    gap: 6,
+  },
+
+  iconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  iconText: {
+    fontSize: 17,
   },
 
   profileWrapper: {
@@ -449,11 +509,12 @@ const styles = StyleSheet.create({
   },
 
   profileEditSheet: {
-    height: 260,
     backgroundColor: '#fff',
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
-    padding: 24,
+    paddingTop: 24,
+    paddingHorizontal: 24,
+    paddingBottom: 70,
   },
 
   sheetTitle: {
@@ -464,7 +525,7 @@ const styles = StyleSheet.create({
   profileOptions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 25,
+    marginTop: 20,
   },
 
   profileBox: {
