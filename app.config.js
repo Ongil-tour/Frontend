@@ -40,7 +40,14 @@ export default {
         {
           locationWhenInUsePermission: "내 주변 장소를 찾기 위해 위치 정보를 사용합니다."
         }
-      ]
+      ],
+      [
+        "expo-build-properties",
+        {
+          android: {}
+        }
+      ],
+      "expo-secure-store"
     ]
   }
 };
