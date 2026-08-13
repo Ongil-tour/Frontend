@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useSettingStore } from "../store/settingStore";
+import { useSettingStore } from "../../stores/useSettingStore";
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BottomTabBar from "../components/BottomTabBar";
+import BottomTabBar from "../../components/common/BottomTabBar";
+import { GREEN, DARK } from "../../constants/colors";
 import {
   View,
   Text,
@@ -15,10 +16,10 @@ import {
 } from "react-native";
 
 const profileImages = [
-  require("../assets/profile/profile1.png"),
-  require("../assets/profile/profile2.png"),
-  require("../assets/profile/profile3.png"),
-  require("../assets/profile/profile4.png"),
+  require("../../../assets/profile/profile1.png"),
+  require("../../../assets/profile/profile2.png"),
+  require("../../../assets/profile/profile3.png"),
+  require("../../../assets/profile/profile4.png"),
 ];
 
 const placeIcons = {
@@ -33,15 +34,18 @@ export default function MyPage() {
   const [profileImage, setProfileImage] = useState(profileImages[0]);
 
   const colors = {
-    background: isDark ? "#222222" : "#FFFFFF",
-    card: isDark ? "#333333" : "#F5F5F5",
-    innerCard: isDark ? "#444444" : "#FFFFFF",
-    text: isDark ? "#FFFFFF" : "#000000",
-    subText: isDark ? "#BDBDBD" : "#808080",
-    divider: isDark ? "#555555" : "#DDDDDD",
-    tab: isDark ? "#BDBDBD" : "#808080",
-    activeTab: isDark ? "#FFFFFF" : "#000000",
-    iconBackground: isDark ? "#3A5A46" : "#DDF2E3",
+    background: isDark ? DARK.background : GREEN.screenBg,
+    card: isDark ? DARK.card : "#FFFFFF",
+    innerCard: isDark ? DARK.innerCard : GREEN.softer,
+    text: isDark ? DARK.text : "#000000",
+    subText: isDark ? DARK.subText : "#808080",
+    divider: isDark ? DARK.border : GREEN.border,
+    tab: isDark ? DARK.subText : "#808080",
+    activeTab: isDark ? DARK.text : GREEN.primary,
+    iconBackground: isDark ? "#3A5A46" : GREEN.tint,
+    accent: GREEN.primary,
+    editButton: isDark ? DARK.innerCard : GREEN.primary,
+    editIcon: isDark ? DARK.text : "#FFFFFF",
   };
 
   const sizes = {
@@ -53,6 +57,7 @@ export default function MyPage() {
 
   return (
     <SafeAreaView
+      edges={['top']}
       style={[
         styles.container,
         {
@@ -83,10 +88,10 @@ export default function MyPage() {
             />
 
             <TouchableOpacity
-              style={styles.editButton}
+              style={[styles.editButton, { backgroundColor: colors.editButton }]}
               onPress={() => setShowProfileEdit(true)}
             >
-              <Text style={styles.editText}>✎</Text>
+              <Text style={[styles.editText, { color: colors.editIcon }]}>✎</Text>
             </TouchableOpacity>
           </View>
 
@@ -149,6 +154,8 @@ export default function MyPage() {
           <Switch
             value={isDark}
             onValueChange={setIsDark}
+            trackColor={{ false: '#D8D8D8', true: GREEN.primary }}
+            thumbColor="#FFFFFF"
           />
         </View>
 

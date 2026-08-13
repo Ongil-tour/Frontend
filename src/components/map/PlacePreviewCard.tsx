@@ -1,15 +1,20 @@
 import { forwardRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { KakaoPlace } from '../../types/place';
+import { GREEN } from '../../constants/colors';
 
 interface Props {
   place: KakaoPlace | null;
   onDetailPress: (place: KakaoPlace) => void;
   onClose: () => void;
+  onRequestClose: () => void;
 }
 
-const PlacePreviewCard = forwardRef<BottomSheet, Props>(({ place, onDetailPress, onClose }, ref) => {
+const PlacePreviewCard = forwardRef<BottomSheet, Props>(({ place, onDetailPress, onClose, onRequestClose }, ref) => {
+  const insets = useSafeAreaInsets();
+
   const openInKakaoMap = () => {
     if (!place) return;
     const appUrl = place.id
@@ -28,13 +33,16 @@ const PlacePreviewCard = forwardRef<BottomSheet, Props>(({ place, onDetailPress,
     <BottomSheet
       ref={ref}
       index={-1}
-      snapPoints={['24%']}
+      enableDynamicSizing
       enablePanDownToClose
       onClose={onClose}
     >
-      <BottomSheetView style={styles.container}>
+      <BottomSheetView style={[styles.container, { paddingBottom: 20 + insets.bottom }]}>
         {place ? (
           <>
+            <TouchableOpacity style={styles.closeButton} onPress={onRequestClose} hitSlop={8}>
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
             <Text style={styles.name} numberOfLines={1}>{place.name}</Text>
             <Text style={styles.meta}>
               {place.category}
@@ -61,22 +69,35 @@ export default PlacePreviewCard;
 
 const styles = StyleSheet.create({
   container: { paddingHorizontal: 20, paddingTop: 4 },
-  name: { fontSize: 17, fontWeight: '700', color: '#111' },
+  closeButton: {
+    position: 'absolute',
+    top: 4,
+    right: 20,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F0F0F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  closeButtonText: { fontSize: 13, color: '#666', fontWeight: '600' },
+  name: { fontSize: 17, fontWeight: '700', color: '#111', paddingRight: 36 },
   meta: { fontSize: 13, color: '#777', marginTop: 4 },
   buttonRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
   secondaryButton: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#E9F7EF',
+    backgroundColor: GREEN.soft,
     alignItems: 'center',
   },
-  secondaryButtonText: { color: '#2E7D4F', fontWeight: '600', fontSize: 14 },
+  secondaryButtonText: { color: GREEN.primaryText, fontWeight: '600', fontSize: 14 },
   primaryButton: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#22A45D',
+    backgroundColor: GREEN.primary,
     alignItems: 'center',
   },
   primaryButtonText: { color: 'white', fontWeight: '600', fontSize: 14 },

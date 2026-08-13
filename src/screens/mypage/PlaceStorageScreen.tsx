@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { useSettingStore } from '../store/settingStore';
-import BottomTabBar from "../components/BottomTabBar";
+import { useSettingStore } from '../../stores/useSettingStore';
+import BottomTabBar from "../../components/common/BottomTabBar";
+import { GREEN, DARK } from "../../constants/colors";
 import {
   View,
   Text,
@@ -13,12 +14,14 @@ export default function PlaceStorage() {
   const navigation = useNavigation();
   const { isDark, fontSize } = useSettingStore();
   const colors = {
-    background: isDark ? '#121212' : '#FFFFFF',
-    text: isDark ? '#FFFFFF' : '#000000',
-    subText: isDark ? '#BBBBBB' : '#777777',
-    card: isDark ? '#2A2A2A' : '#F5F5F5',
-    image: isDark ? '#444444' : '#D9D9D9',
-    iconBackground: isDark ? "#3A5A46" : "#DDF2E3",
+    background: isDark ? DARK.background : GREEN.screenBg,
+    text: isDark ? DARK.text : '#000000',
+    subText: isDark ? DARK.subText : '#777777',
+    card: isDark ? DARK.card : '#FFFFFF',
+    image: isDark ? DARK.innerCard : '#D9D9D9',
+    iconBackground: isDark ? "#3A5A46" : GREEN.tint,
+    accentText: isDark ? DARK.text : GREEN.primaryText,
+    accent: isDark ? DARK.text : GREEN.primary,
   };
   const [bookmarked, setBookmarked] = useState(true);
   const [selectedTab, setSelectedTab] =
@@ -126,7 +129,7 @@ export default function PlaceStorage() {
                 style={[
                   styles.tabText,
                   {
-                    color: colors.text,
+                    color: selectedTab === tab.id ? colors.accentText : colors.text,
                     opacity: selectedTab === tab.id ? 1 : 0.4,
                     fontSize: fontSize,
                   }
@@ -142,7 +145,7 @@ export default function PlaceStorage() {
                     style={[
                       styles.underline,
                       {
-                        backgroundColor: colors.text,
+                        backgroundColor: colors.accent,
                       }
                     ]}
                   />
@@ -170,7 +173,7 @@ export default function PlaceStorage() {
               style={[
                 styles.star,
                 {
-                  color: bookmarked ? "#FFD700" : "#D3D3D3",
+                  color: bookmarked ? GREEN.primary : "#D3D3D3",
                 },
               ]}
             >

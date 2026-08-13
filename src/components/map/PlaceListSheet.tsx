@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import AccessibilityBadges from './AccessibilityBadges';
 import { KakaoPlace } from '../../types/place';
+import { GREEN } from '../../constants/colors';
 
 interface Props {
   category: string | null;
@@ -52,7 +53,7 @@ const styles = StyleSheet.create({
   headerText: { fontSize: 15, fontWeight: '700', color: '#111' },
   listContent: { paddingHorizontal: 20, paddingBottom: 24, gap: 12 },
   card: {
-    backgroundColor: '#F7FAF8',
+    backgroundColor: GREEN.softer,
     borderRadius: 14,
     padding: 14,
   },
