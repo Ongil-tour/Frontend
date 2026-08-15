@@ -1,79 +1,53 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSettingStore } from '../../stores/useSettingStore';
 import BottomTabBar from "../../components/common/BottomTabBar";
 import { GREEN, DARK } from "../../constants/colors";
+import { useFavoriteListWithFacilities } from '../../queries/useFavoriteListWithFacilities';
+import { useRemoveFavoriteMutation } from '../../queries/useRemoveFavoriteMutation';
+import { getAvailableAccessibilityIcons } from '../../utils/accessibility';
+import { mapFacilityToKakaoPlace } from '../../utils/facility';
+import { FavoriteListType } from '../../types/favorite';
+import { RootStackParamList } from '../../navigation/types';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 
+type TabId = 'favorite' | 'want' | 'visited';
+
+const TAB_TO_LIST_TYPE: Record<TabId, FavoriteListType> = {
+  favorite: 'FREQUENT',
+  want: 'WISHLIST',
+  visited: 'VISITED',
+};
+
 export default function PlaceStorage() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isDark, fontSize } = useSettingStore();
   const colors = {
     background: isDark ? DARK.background : GREEN.screenBg,
     text: isDark ? DARK.text : '#000000',
     subText: isDark ? DARK.subText : '#777777',
     card: isDark ? DARK.card : '#FFFFFF',
-    image: isDark ? DARK.innerCard : '#D9D9D9',
     iconBackground: isDark ? "#3A5A46" : GREEN.tint,
     accentText: isDark ? DARK.text : GREEN.primaryText,
     accent: isDark ? DARK.text : GREEN.primary,
   };
-  const [bookmarked, setBookmarked] = useState(true);
-  const [selectedTab, setSelectedTab] =
-    useState<'favorite' | 'want' | 'visited'>('favorite');
+  const [selectedTab, setSelectedTab] = React.useState<TabId>('favorite');
 
-  const places = {
-    favorite: [
-      {
-        id: 1,
-        name: '서울숲',
-        address: '서울특별시 성동구',
-        icons: ['♿', '🚻', '🅿️'],
-      },
-    ],
+  const { rows, isLoading, isError } = useFavoriteListWithFacilities(TAB_TO_LIST_TYPE[selectedTab]);
+  const removeFavoriteMutation = useRemoveFavoriteMutation();
 
-    want: [
-      {
-        id: 2,
-        name: '남산서울타워',
-        address: '서울특별시 용산구',
-        icons: ['🛗', '🐕', '🍼'],
-      },
-    ],
-
-    visited: [
-      {
-        id: 3,
-        name: '경복궁',
-        address: '서울특별시 종로구',
-        icons: ['♿', '🛗', '🚻'],
-      },
-    ],
-  };
-
-  const currentPlaces = places[selectedTab];
-
-  const tabs: {
-    id: 'favorite' | 'want' | 'visited';
-    title: string;
-  }[] = [
-    {
-      id:'favorite',
-      title:'즐겨찾는 곳'
-    },
-    {
-      id:'want',
-      title:'가고싶은 곳'
-    },
-    {
-      id:'visited',
-      title:'방문했던 곳'
-    }
+  const tabs: { id: TabId; title: string }[] = [
+    { id: 'favorite', title: '즐겨찾는 곳' },
+    { id: 'want', title: '가고싶은 곳' },
+    { id: 'visited', title: '방문했던 곳' },
   ];
 
   return (
@@ -155,79 +129,101 @@ export default function PlaceStorage() {
           ))}
         </View>
 
-        {/* 장소 카드 */}
-        <TouchableOpacity
-          style={[
-            styles.placeCard,
-            {
-              backgroundColor: colors.card,
-            },
-          ]}
-        >
-
-          <TouchableOpacity
-            style={styles.starButton}
-            onPress={() => setBookmarked(!bookmarked)}
-          >
-            <Text
-              style={[
-                styles.star,
-                {
-                  color: bookmarked ? GREEN.primary : "#D3D3D3",
-                },
-              ]}
-            >
-              {bookmarked ? "★" : "☆"}
-            </Text>
-          </TouchableOpacity>
-
-          <View style={styles.info}>
-
-            <View style={styles.topRow}>
-              <Text
-                style={[
-                  styles.placeName,
-                  {
-                    color: colors.text,
-                    fontSize: fontSize + 2,
-                  },
-                ]}
-              >
-                {currentPlaces[0].name}
-              </Text>
-            </View>
-
-            <Text
-              style={[
-                styles.address,
-                {
-                  color: colors.subText,
-                  fontSize: fontSize - 2,
-                },
-              ]}
-            >
-              {currentPlaces[0].address}
-            </Text>
-
-            <View style={styles.barrierContainer}>
-              {currentPlaces[0].icons.map((icon, index) => (
-                <View
-                  key={index}
+        {/* 장소 목록 */}
+        {isLoading ? (
+          <ActivityIndicator style={styles.statusBox} color={colors.accent} />
+        ) : isError ? (
+          <Text style={[styles.statusText, { color: colors.subText }]}>
+            불러오지 못했습니다.
+          </Text>
+        ) : rows.length === 0 ? (
+          <Text style={[styles.statusText, { color: colors.subText }]}>
+            저장된 장소가 없어요.
+          </Text>
+        ) : (
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {rows.map((row) => {
+              if (!row.facility) return null;
+              const facility = row.facility;
+              return (
+                <TouchableOpacity
+                  key={row.item.id}
                   style={[
-                    styles.barrierBox,
+                    styles.placeCard,
                     {
-                      backgroundColor: colors.iconBackground,
+                      backgroundColor: colors.card,
                     },
                   ]}
+                  onPress={() =>
+                    navigation.navigate('PlaceDetail', { place: mapFacilityToKakaoPlace(facility) })
+                  }
                 >
-                  <Text style={styles.barrierIcon}>
-                    {icon}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.starButton}
+                    onPress={() =>
+                      removeFavoriteMutation.mutate({
+                        favoriteId: row.item.id,
+                        facilityId: row.item.facility_id,
+                      })
+                    }
+                  >
+                    <Text style={[styles.star, { color: GREEN.primary }]}>★</Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.info}>
+
+                    <View style={styles.topRow}>
+                      <Text
+                        style={[
+                          styles.placeName,
+                          {
+                            color: colors.text,
+                            fontSize: fontSize + 2,
+                          },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {facility.name}
+                      </Text>
+                    </View>
+
+                    <Text
+                      style={[
+                        styles.address,
+                        {
+                          color: colors.subText,
+                          fontSize: fontSize - 2,
+                        },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {facility.address || '주소 정보 없음'}
+                    </Text>
+
+                    <View style={styles.barrierContainer}>
+                      {getAvailableAccessibilityIcons(facility.accessibility).map((icon, index) => (
+                        <View
+                          key={index}
+                          style={[
+                            styles.barrierBox,
+                            {
+                              backgroundColor: colors.iconBackground,
+                            },
+                          ]}
+                        >
+                          <Text style={styles.barrierIcon}>
+                            {icon}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
       </View>
 
       <BottomTabBar activeTab="storage" />
@@ -261,8 +257,8 @@ const styles = StyleSheet.create({
   },
 
   placeCard:{
-    marginTop:30,
-    height:140,
+    marginTop:16,
+    minHeight:120,
     borderRadius:15,
     flexDirection:'row',
     alignItems:'center',
@@ -272,6 +268,7 @@ const styles = StyleSheet.create({
 
   info:{
     flex:1,
+    paddingRight: 32,
   },
 
   address:{
@@ -335,6 +332,16 @@ const styles = StyleSheet.create({
 
   barrierIcon: {
     fontSize: 21,
+  },
+
+  statusBox: {
+    marginTop: 40,
+  },
+
+  statusText: {
+    marginTop: 40,
+    fontSize: 14,
+    textAlign: 'center',
   },
 
 });

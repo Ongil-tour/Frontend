@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
+import BottomSheet from '@gorhom/bottom-sheet';
 import AccessibilityGrid, { AccessibilityItem } from '../../components/map/AccessibilityGrid';
+import AddToFavoriteSheet from '../../components/map/AddToFavoriteSheet';
+import BookmarkIcon from '../../components/common/BookmarkIcon';
 import { useAccessibilityQuery } from '../../queries/useAccessibilityQuery';
+import { useFavoriteStatusQuery } from '../../queries/useFavoriteStatusQuery';
 import { RootStackParamList } from '../../navigation/types';
 import { AccessibilityInfo } from '../../types/place';
 
@@ -20,7 +24,7 @@ function toAccessibilityItems(a: AccessibilityInfo): AccessibilityItem[] {
 export default function PlaceDetailScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'PlaceDetail'>>();
   const { place } = route.params;
-  const [bookmarked, setBookmarked] = useState(false);
+  const favoriteSheetRef = useRef<BottomSheet>(null);
   // /map/markers에서 온 place(source='internal'|'kakao')는 이미 정확한 접근성 데이터를
   // 들고 있으므로 그대로 쓰고 좌표 재조회를 하지 않는다 (kakao 소스는 null이어도 그대로 —
   // 좌표로 재조회하면 밀집 지역에서 엉뚱한 근처 시설로 매칭될 수 있음). source가 없는
@@ -29,14 +33,27 @@ export default function PlaceDetailScreen() {
   const { data, isLoading, isError } = useAccessibilityQuery(
     place.source ? null : { lat: place.lat, lng: place.lng }
   );
+  // 즐겨찾기는 우리 DB의 실제 facility_id에만 저장 가능. source가 있으면 place.id가 이미
+  // facility_id다. source가 없는 경우(검색바 키워드 검색, 지도 클릭)엔 위 좌표 매칭
+  // 결과(data.facility)가 있을 때만 그 facility.id를 쓴다 — 근처에 매칭되는 시설이 없으면
+  // 저장할 방법이 없어 버튼을 숨긴다(우리 DB에 없는 곳이라 진짜로 불가능).
+  const favoriteFacilityId = place.source
+    ? place.id
+    : data?.matched && data.facility
+      ? data.facility.id
+      : null;
+  const { data: favoriteStatus } = useFavoriteStatusQuery(favoriteFacilityId);
 
   return (
+    <>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.titleRow}>
         <Text style={styles.name}>{place.name}</Text>
-        <TouchableOpacity onPress={() => setBookmarked((v) => !v)}>
-          <Text style={styles.bookmark}>{bookmarked ? '🔖' : '🏷️'}</Text>
-        </TouchableOpacity>
+        {favoriteFacilityId ? (
+          <TouchableOpacity onPress={() => favoriteSheetRef.current?.expand()}>
+            <BookmarkIcon active={favoriteStatus?.is_favorite ?? false} size={26} />
+          </TouchableOpacity>
+        ) : null}
       </View>
       <Text style={styles.meta}>
         {place.category}
@@ -70,6 +87,10 @@ export default function PlaceDetailScreen() {
         </View>
       </View>
     </ScrollView>
+    {favoriteFacilityId ? (
+      <AddToFavoriteSheet ref={favoriteSheetRef} facilityId={favoriteFacilityId} onClose={() => {}} />
+    ) : null}
+    </>
   );
 }
 
@@ -78,7 +99,6 @@ const styles = StyleSheet.create({
   content: { padding: 20, gap: 16 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   name: { fontSize: 22, fontWeight: '700', color: '#111', flexShrink: 1 },
-  bookmark: { fontSize: 22 },
   meta: { fontSize: 14, color: '#777', marginTop: -8 },
   statusBox: { paddingVertical: 24 },
   statusText: { fontSize: 14, color: '#999', textAlign: 'center', paddingVertical: 24 },

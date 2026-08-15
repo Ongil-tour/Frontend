@@ -5,6 +5,12 @@ import { useSettingStore } from "../../stores/useSettingStore";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomTabBar from "../../components/common/BottomTabBar";
 import { GREEN, DARK } from "../../constants/colors";
+import { useFavoriteListWithFacilities } from "../../queries/useFavoriteListWithFacilities";
+import { useMyProfileQuery } from "../../queries/useMyProfileQuery";
+import { useUpdateMySettingsMutation } from "../../queries/useUpdateMySettingsMutation";
+import { getAvailableAccessibilityIcons } from "../../utils/accessibility";
+import { mapFacilityToKakaoPlace } from "../../utils/facility";
+import { ProfileImageFile } from "../../types/user";
 import {
   View,
   Text,
@@ -15,6 +21,13 @@ import {
   Image,
 } from "react-native";
 
+const PROFILE_IMAGE_FILES: ProfileImageFile[] = [
+  "profile1.png",
+  "profile2.png",
+  "profile3.png",
+  "profile4.png",
+];
+
 const profileImages = [
   require("../../../assets/profile/profile1.png"),
   require("../../../assets/profile/profile2.png"),
@@ -22,16 +35,25 @@ const profileImages = [
   require("../../../assets/profile/profile4.png"),
 ];
 
-const placeIcons = {
-  서울숲: ['♿', '🚻', '🅿️'],
-  경복궁: ['♿', '🛗', '🚻'],
-};
-
 export default function MyPage() {
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { isDark, setIsDark, fontSize } = useSettingStore();
-  const [profileImage, setProfileImage] = useState(profileImages[0]);
+  const [profileImageIndex, setProfileImageIndex] = useState(0);
+  const { rows: favoriteRows } = useFavoriteListWithFacilities('FREQUENT', 2);
+  const { data: profile } = useMyProfileQuery();
+  const updateSettingsMutation = useUpdateMySettingsMutation();
+
+  const handleToggleDark = (value: boolean) => {
+    setIsDark(value);
+    updateSettingsMutation.mutate({ dark_mode: value });
+  };
+
+  const handleSelectProfileImage = (index: number) => {
+    setProfileImageIndex(index);
+    setShowProfileEdit(false);
+    updateSettingsMutation.mutate({ profile_image: PROFILE_IMAGE_FILES[index] });
+  };
 
   const colors = {
     background: isDark ? DARK.background : GREEN.screenBg,
@@ -83,7 +105,7 @@ export default function MyPage() {
         <View style={styles.profileContainer}>
           <View style={styles.profileWrapper}>
             <Image
-              source={profileImage}
+              source={profileImages[profileImageIndex]}
               style={styles.profileImage}
             />
 
@@ -104,19 +126,7 @@ export default function MyPage() {
               },
             ]}
           >
-            문서은님
-          </Text>
-
-          <Text
-            style={[
-              styles.email,
-              {
-                color: colors.subText,
-                fontSize: sizes.small,
-              },
-            ]}
-          >
-            ez_trip@example.com
+            {profile?.email ?? '로그인이 필요해요'}
           </Text>
         </View>
 
@@ -153,7 +163,7 @@ export default function MyPage() {
 
           <Switch
             value={isDark}
-            onValueChange={setIsDark}
+            onValueChange={handleToggleDark}
             trackColor={{ false: '#D8D8D8', true: GREEN.primary }}
             thumbColor="#FFFFFF"
           />
@@ -229,89 +239,61 @@ export default function MyPage() {
             </Text>
           </View>
 
-          <TouchableOpacity
-            style={[
-              styles.placeCard,
-              {
-                backgroundColor: colors.innerCard,
-              },
-            ]}
-            activeOpacity={0.8}
-            onPress={(e) => {
-              e.stopPropagation();
-              console.log("장소 상세정보 : 서울숲");
-            }}
-          >
-            <Text
-              style={[
-                styles.placeName,
-                {
-                  color: colors.text,
-                  fontSize: sizes.small,
-                },
-              ]}
-            >
-              서울숲
+          {favoriteRows.length === 0 ? (
+            <Text style={[styles.emptyText, { color: colors.subText, fontSize: sizes.small }]}>
+              즐겨찾는 장소가 없어요.
             </Text>
-
-            <View style={styles.iconContainer}>
-              {placeIcons.서울숲.map((icon, index) => (
-                <View
-                  key={index}
+          ) : (
+            favoriteRows.map((row) => {
+              if (!row.facility) return null;
+              const facility = row.facility;
+              return (
+                <TouchableOpacity
+                  key={row.item.id}
                   style={[
-                    styles.iconBox,
+                    styles.placeCard,
                     {
-                      backgroundColor: colors.iconBackground,
+                      backgroundColor: colors.innerCard,
                     },
                   ]}
+                  activeOpacity={0.8}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    navigation.navigate("PlaceDetail", { place: mapFacilityToKakaoPlace(facility) });
+                  }}
                 >
-                  <Text style={styles.iconText}>{icon}</Text>
-                </View>
-              ))}
-            </View>
-          </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.placeName,
+                      {
+                        color: colors.text,
+                        fontSize: sizes.small,
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {facility.name}
+                  </Text>
 
-          <TouchableOpacity
-            style={[
-              styles.placeCard,
-              {
-                backgroundColor: colors.innerCard,
-              },
-            ]}
-            activeOpacity={0.8}
-            onPress={(e) => {
-              e.stopPropagation();
-              console.log("장소 상세정보 : 경복궁");
-            }}
-          >
-            <Text
-              style={[
-                styles.placeName,
-                {
-                  color: colors.text,
-                  fontSize: sizes.small,
-                },
-              ]}
-            >
-              경복궁
-            </Text>
-
-            <View style={styles.iconContainer}>
-              {placeIcons.경복궁.map((icon, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.iconBox,
-                    {
-                      backgroundColor: colors.iconBackground,
-                    },
-                  ]}
-                >
-                  <Text style={styles.iconText}>{icon}</Text>
-                </View>
-              ))}
-            </View>
-          </TouchableOpacity>
+                  <View style={styles.iconContainer}>
+                    {getAvailableAccessibilityIcons(facility.accessibility).map((icon, index) => (
+                      <View
+                        key={index}
+                        style={[
+                          styles.iconBox,
+                          {
+                            backgroundColor: colors.iconBackground,
+                          },
+                        ]}
+                      >
+                        <Text style={styles.iconText}>{icon}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          )}
         </TouchableOpacity>
 
         {showProfileEdit && (
@@ -344,10 +326,7 @@ export default function MyPage() {
                 {profileImages.map((image, index) => (
                   <TouchableOpacity
                     key={index}
-                    onPress={() => {
-                      setProfileImage(image);
-                      setShowProfileEdit(false);
-                    }}
+                    onPress={() => handleSelectProfileImage(index)}
                   >
                     <Image
                       source={image}
@@ -392,11 +371,6 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 24,
     fontWeight: "bold",
-  },
-
-  email: {
-    marginTop: 5,
-    color: "gray",
   },
 
   divider: {
@@ -457,6 +431,10 @@ const styles = StyleSheet.create({
 
   placeName: {
     fontSize: 15,
+  },
+
+  emptyText: {
+    paddingVertical: 8,
   },
 
   iconContainer: {

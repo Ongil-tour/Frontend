@@ -12,6 +12,12 @@ export const GREEN = {
   border: '#CFEBD9',
 } as const;
 
+// 즐겨찾기 북마크 리본 아이콘 색상 (선택/미선택)
+export const BOOKMARK = {
+  active: '#F3B24A',
+  inactive: '#C4C4C4',
+} as const;
+
 export const DARK = {
   background: '#222222',
   card: '#333333',
