@@ -9,7 +9,7 @@ export default {
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.ongil.app",
+      bundleIdentifier: "com.anonymous.Frontend",
       infoPlist: {
         LSApplicationQueriesSchemes: ["kakaomap"],
         // 개발 중 로컬 백엔드(평문 HTTP)에 접속하기 위한 설정. 백엔드가 HTTPS로
@@ -20,7 +20,7 @@ export default {
       }
     },
     android: {
-      package: "com.ongil.app",
+      package: "com.anonymous.Frontend",
       adaptiveIcon: {
         backgroundColor: "#E6F4FE",
         foregroundImage: "./assets/android-icon-foreground.png",
