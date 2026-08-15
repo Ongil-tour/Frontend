@@ -8,6 +8,6 @@ export function useSocialLoginMutation(provider: AuthProvider) {
 
   return useMutation({
     mutationFn: (payload: SocialLoginPayload) => loginWithProvider(provider, payload),
-    onSuccess: (data) => setSession(data.token, data.user),
+    onSuccess: (data) => setSession(data.access_token, data.refresh_token),
   });
 }

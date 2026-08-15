@@ -1,19 +1,21 @@
 export type AuthProvider = 'google' | 'naver' | 'kakao';
 
+// 백엔드 UserRead(app/schemas/user.py) 기준 - name/provider 필드는 없음
 export interface User {
   id: string;
   email: string;
-  name: string;
-  provider: AuthProvider;
+  createdAt: string;
 }
 
-// 백엔드 소셜 로그인 엔드포인트 요청/응답 형태. 엔드포인트 경로/필드명은
-// 백엔드 확정되면 api/auth.ts만 맞춰서 고치면 됨
+// 백엔드 OAuthLoginRequest(app/routers/auth.py) 기준
 export interface SocialLoginPayload {
-  idToken: string;
+  token: string;
 }
 
+// 백엔드 TokenPair(app/schemas/user.py) 기준 - user는 로그인 응답에 없고
+// GET /users/me를 access_token으로 따로 호출해야 함
 export interface SocialLoginResponse {
-  token: string;
-  user: User;
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
 }

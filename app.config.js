@@ -6,7 +6,7 @@ export default {
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
-    newArchEnabled: false,
+    newArchEnabled: true,
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.anonymous.Frontend"
@@ -25,7 +25,14 @@ export default {
       favicon: "./assets/favicon.png"
     },
     plugins: [
-      "expo-build-properties",
+      [
+        "expo-build-properties",
+        {
+          ios: {
+            buildReactNativeFromSource: true
+          }
+        }
+      ],
       [
         "@react-native-google-signin/google-signin",
         {

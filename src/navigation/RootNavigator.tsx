@@ -7,11 +7,11 @@ import { RootStackParamList } from './types';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
-  const token = useAuthStore((s) => s.token);
+  const accessToken = useAuthStore((s) => s.accessToken);
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {token ? (
+      {accessToken ? (
         <Stack.Screen name="Home" component={HomeScreen} />
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} />

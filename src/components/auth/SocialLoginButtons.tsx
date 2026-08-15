@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useGoogleSignIn } from '../../hooks/useGoogleSignIn';
 import { useSocialLoginMutation } from '../../queries/useSocialLoginMutation';
+import { colors } from '../../theme/colors';
 
 export default function SocialLoginButtons() {
   const { signIn } = useGoogleSignIn();
@@ -10,7 +11,7 @@ export default function SocialLoginButtons() {
     try {
       const idToken = await signIn();
       if (!idToken) return;
-      googleLogin.mutate({ idToken });
+      googleLogin.mutate({ token: idToken });
     } catch (error) {
       console.log('구글 로그인 에러:', error);
       const message = error instanceof Error ? error.message : String(error);
@@ -24,9 +25,10 @@ export default function SocialLoginButtons() {
         style={styles.googleButton}
         onPress={handleGooglePress}
         disabled={googleLogin.isPending}
+        activeOpacity={0.8}
       >
         {googleLogin.isPending ? (
-          <ActivityIndicator color="#333" />
+          <ActivityIndicator color={colors.primary} />
         ) : (
           <Text style={styles.googleButtonText}>Google로 계속하기</Text>
         )}
@@ -39,17 +41,22 @@ export default function SocialLoginButtons() {
 }
 
 const styles = StyleSheet.create({
-  container: { width: '100%', gap: 8 },
+  container: { width: '100%', gap: 10 },
   googleButton: {
     width: '100%',
-    height: 48,
-    borderRadius: 10,
+    height: 52,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'white',
+    backgroundColor: colors.surface,
+    shadowColor: colors.primaryDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  googleButtonText: { fontSize: 15, fontWeight: '600', color: '#333' },
-  errorText: { fontSize: 13, color: '#D64545', textAlign: 'center' },
+  googleButtonText: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
+  errorText: { fontSize: 13, color: colors.error, textAlign: 'center' },
 });
