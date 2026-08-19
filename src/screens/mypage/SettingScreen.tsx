@@ -5,6 +5,9 @@ import { useSettingStore } from "../../stores/useSettingStore";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomTabBar from "../../components/common/BottomTabBar";
 import { GREEN, DARK } from "../../constants/colors";
+import { useLogoutMutation } from "../../queries/useLogoutMutation";
+import { useDeleteAccountMutation } from "../../queries/useDeleteAccountMutation";
+import { useClearAllFavoritesMutation } from "../../queries/useClearAllFavoritesMutation";
 import {
   View,
   Text,
@@ -24,6 +27,9 @@ export default function Setting() {
     setModalType(type);
     setModalVisible(true);
   };
+  const logoutMutation = useLogoutMutation();
+  const deleteAccountMutation = useDeleteAccountMutation();
+  const clearAllFavoritesMutation = useClearAllFavoritesMutation();
 
   const colors = {
     background: isDark ? DARK.background : GREEN.screenBg,
@@ -46,13 +52,13 @@ export default function Setting() {
 
   const confirmAction = () => {
     if (modalType === "로그아웃")
-      console.log("로그아웃 실행");
+      logoutMutation.mutate();
     else if (modalType === "회원 탈퇴")
-      console.log("회원 탈퇴 실행");
+      deleteAccountMutation.mutate();
     else if (modalType === "검색 기록")
       console.log("검색 기록 삭제 실행");
     else if (modalType === "즐겨찾기")
-      console.log("즐겨찾기 삭제 실행");
+      clearAllFavoritesMutation.mutate();
     
     setModalVisible(false);
 

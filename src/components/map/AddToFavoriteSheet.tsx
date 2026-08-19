@@ -5,11 +5,12 @@ import { useFavoriteListsQuery } from '../../queries/useFavoriteListsQuery';
 import { useFavoriteStatusQuery } from '../../queries/useFavoriteStatusQuery';
 import { useAddFavoriteMutation } from '../../queries/useAddFavoriteMutation';
 import { useRemoveFavoriteByFacilityMutation } from '../../queries/useRemoveFavoriteByFacilityMutation';
-import { FavoriteListType } from '../../types/favorite';
+import { FacilitySource, FavoriteListType } from '../../types/favorite';
 import BookmarkIcon from '../common/BookmarkIcon';
 
 interface Props {
   facilityId: string | null;
+  source?: FacilitySource;
   onClose: () => void;
 }
 
@@ -25,9 +26,9 @@ const LIST_TYPE_ICON: Record<FavoriteListType, string> = {
   VISITED: '📖',
 };
 
-const AddToFavoriteSheet = forwardRef<BottomSheet, Props>(({ facilityId, onClose }, ref) => {
+const AddToFavoriteSheet = forwardRef<BottomSheet, Props>(({ facilityId, source = 'internal', onClose }, ref) => {
   const { data: lists } = useFavoriteListsQuery();
-  const { data: status } = useFavoriteStatusQuery(facilityId);
+  const { data: status } = useFavoriteStatusQuery(facilityId, source);
   const addMutation = useAddFavoriteMutation();
   const removeMutation = useRemoveFavoriteByFacilityMutation();
 
@@ -36,7 +37,7 @@ const AddToFavoriteSheet = forwardRef<BottomSheet, Props>(({ facilityId, onClose
     if (isSaved) {
       removeMutation.mutate({ facilityId, listId });
     } else {
-      addMutation.mutate({ facility_id: facilityId, list_id: listId });
+      addMutation.mutate({ facility_id: facilityId, list_id: listId, source });
     }
   };
 

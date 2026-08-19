@@ -3,6 +3,8 @@ import { useGoogleSignIn } from '../../hooks/useGoogleSignIn';
 import { useSocialLoginMutation } from '../../queries/useSocialLoginMutation';
 import { colors } from '../../theme/colors';
 
+
+
 export default function SocialLoginButtons() {
   const { signIn } = useGoogleSignIn();
   const googleLogin = useSocialLoginMutation('google');
@@ -11,7 +13,7 @@ export default function SocialLoginButtons() {
     try {
       const idToken = await signIn();
       if (!idToken) return;
-      googleLogin.mutate({ token: idToken });
+      await googleLogin.mutateAsync({ token: idToken });
     } catch (error) {
       console.log('구글 로그인 에러:', error);
       const message = error instanceof Error ? error.message : String(error);

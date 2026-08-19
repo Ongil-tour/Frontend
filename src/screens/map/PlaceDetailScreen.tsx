@@ -9,6 +9,7 @@ import { useAccessibilityQuery } from '../../queries/useAccessibilityQuery';
 import { useFavoriteStatusQuery } from '../../queries/useFavoriteStatusQuery';
 import { RootStackParamList } from '../../navigation/types';
 import { AccessibilityInfo } from '../../types/place';
+import { FacilitySource } from '../../types/favorite';
 
 function toAccessibilityItems(a: AccessibilityInfo): AccessibilityItem[] {
   return [
@@ -42,7 +43,10 @@ export default function PlaceDetailScreen() {
     : data?.matched && data.facility
       ? data.facility.id
       : null;
-  const { data: favoriteStatus } = useFavoriteStatusQuery(favoriteFacilityId);
+  // place.source가 'kakao'인 경우만 카카오 소스. 그 외(내부 DB 직접 매칭, 좌표 재조회로
+  // 찾은 매칭 결과)는 전부 우리 DB의 실제 시설이므로 'internal'.
+  const favoriteSource: FacilitySource = place.source === 'kakao' ? 'kakao' : 'internal';
+  const { data: favoriteStatus } = useFavoriteStatusQuery(favoriteFacilityId, favoriteSource);
 
   return (
     <>
@@ -88,7 +92,12 @@ export default function PlaceDetailScreen() {
       </View>
     </ScrollView>
     {favoriteFacilityId ? (
-      <AddToFavoriteSheet ref={favoriteSheetRef} facilityId={favoriteFacilityId} onClose={() => {}} />
+      <AddToFavoriteSheet
+        ref={favoriteSheetRef}
+        facilityId={favoriteFacilityId}
+        source={favoriteSource}
+        onClose={() => {}}
+      />
     ) : null}
     </>
   );

@@ -7,7 +7,7 @@ import { GREEN, DARK } from "../../constants/colors";
 import { useFavoriteListWithFacilities } from '../../queries/useFavoriteListWithFacilities';
 import { useRemoveFavoriteMutation } from '../../queries/useRemoveFavoriteMutation';
 import { getAvailableAccessibilityIcons } from '../../utils/accessibility';
-import { mapFacilityToKakaoPlace } from '../../utils/facility';
+import { facilityToAccessibilityInfo, mapFacilityToKakaoPlace } from '../../utils/facility';
 import { FavoriteListType } from '../../types/favorite';
 import { RootStackParamList } from '../../navigation/types';
 import {
@@ -202,7 +202,7 @@ export default function PlaceStorage() {
                     </Text>
 
                     <View style={styles.barrierContainer}>
-                      {getAvailableAccessibilityIcons(facility.accessibility).map((icon, index) => (
+                      {getAvailableAccessibilityIcons(facilityToAccessibilityInfo(facility)).map((icon, index) => (
                         <View
                           key={index}
                           style={[

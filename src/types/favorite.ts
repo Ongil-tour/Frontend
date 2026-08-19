@@ -1,5 +1,7 @@
 export type FavoriteListType = 'FREQUENT' | 'WISHLIST' | 'VISITED';
 
+export type FacilitySource = 'internal' | 'kakao';
+
 export interface FavoriteList {
   id: string;
   list_type: FavoriteListType;
@@ -22,4 +24,5 @@ export interface FavoriteStatus {
 export interface CreateFavoritePayload {
   facility_id: string;
   list_id: string;
+  source?: FacilitySource;
 }

@@ -1,3 +1,5 @@
+require("@expo/env").load(__dirname);
+
 export default {
   expo: {
     name: "Frontend",
@@ -9,7 +11,7 @@ export default {
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.anonymous.Frontend",
+      bundleIdentifier: "com.ongil.app",
       infoPlist: {
         LSApplicationQueriesSchemes: ["kakaomap"],
         // 개발 중 로컬 백엔드(평문 HTTP)에 접속하기 위한 설정. 백엔드가 HTTPS로
@@ -20,7 +22,7 @@ export default {
       }
     },
     android: {
-      package: "com.anonymous.Frontend",
+      package: "com.ongil.app",
       adaptiveIcon: {
         backgroundColor: "#E6F4FE",
         foregroundImage: "./assets/android-icon-foreground.png",

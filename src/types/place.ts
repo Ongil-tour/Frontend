@@ -27,15 +27,24 @@ export interface MatchByLocationResponse {
   message?: string | null;
 }
 
-export interface Place {
+// GET /facilities/{id} 실제 응답 기준 (app/schemas/facility.py FacilityRead).
+// match-by-location 응답(FacilityMatchResult, camelCase + accessibility 중첩)과
+// 달리 snake_case 평평한 구조라 섞어 쓰면 안 됨.
+export interface FacilityDetail {
   id: string;
   name: string;
-  category: string;
-  address: string;
+  category: string | null;
+  address: string | null;
+  phone: string | null;
+  operating_hours: string | null;
   lat: number;
   lng: number;
-  distance?: number;
-  accessibility: AccessibilityInfo;
+  wheelchair_accessible: boolean | null;
+  disabled_restroom: boolean | null;
+  disabled_parking: boolean | null;
+  elevator: boolean | null;
+  pet_friendly: boolean | null;
+  nursing_room: boolean | null;
 }
 
 export interface KakaoPlace {

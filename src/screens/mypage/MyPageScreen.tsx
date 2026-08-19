@@ -7,9 +7,11 @@ import BottomTabBar from "../../components/common/BottomTabBar";
 import { GREEN, DARK } from "../../constants/colors";
 import { useFavoriteListWithFacilities } from "../../queries/useFavoriteListWithFacilities";
 import { useMyProfileQuery } from "../../queries/useMyProfileQuery";
+import { useMySettingsQuery } from "../../queries/useMySettingsQuery";
 import { useUpdateMySettingsMutation } from "../../queries/useUpdateMySettingsMutation";
 import { getAvailableAccessibilityIcons } from "../../utils/accessibility";
-import { mapFacilityToKakaoPlace } from "../../utils/facility";
+import { facilityToAccessibilityInfo, mapFacilityToKakaoPlace } from "../../utils/facility";
+import { fontSizeToPx } from "../../utils/fontSize";
 import { ProfileImageFile } from "../../types/user";
 import {
   View,
@@ -38,11 +40,23 @@ const profileImages = [
 export default function MyPage() {
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const { isDark, setIsDark, fontSize } = useSettingStore();
+  const { isDark, setIsDark, fontSize, setFontSize } = useSettingStore();
   const [profileImageIndex, setProfileImageIndex] = useState(0);
   const { rows: favoriteRows } = useFavoriteListWithFacilities('FREQUENT', 2);
   const { data: profile } = useMyProfileQuery();
+  const { data: settings } = useMySettingsQuery();
   const updateSettingsMutation = useUpdateMySettingsMutation();
+
+  // 로그인 직후 서버에 저장된 설정(다크모드/글자크기/프로필사진)으로 초기화.
+  // 이후 로컬 변경은 handleToggleDark/handleSelectProfileImage가 즉시 반영하므로
+  // 이 훅은 최초 로드 시 한 번만 상태를 맞추면 된다.
+  React.useEffect(() => {
+    if (!settings) return;
+    setIsDark(settings.dark_mode);
+    setFontSize(fontSizeToPx(settings.font_size));
+    const index = PROFILE_IMAGE_FILES.indexOf(settings.profile_image);
+    if (index !== -1) setProfileImageIndex(index);
+  }, [settings]);
 
   const handleToggleDark = (value: boolean) => {
     setIsDark(value);
@@ -276,7 +290,7 @@ export default function MyPage() {
                   </Text>
 
                   <View style={styles.iconContainer}>
-                    {getAvailableAccessibilityIcons(facility.accessibility).map((icon, index) => (
+                    {getAvailableAccessibilityIcons(facilityToAccessibilityInfo(facility)).map((icon, index) => (
                       <View
                         key={index}
                         style={[
