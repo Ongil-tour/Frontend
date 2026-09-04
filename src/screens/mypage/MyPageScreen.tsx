@@ -1,9 +1,18 @@
 import React, { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useSettingStore } from "../store/settingStore";
+import { useSettingStore } from "../../stores/useSettingStore";
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BottomTabBar from "../components/BottomTabBar";
+import BottomTabBar from "../../components/common/BottomTabBar";
+import { GREEN, DARK } from "../../constants/colors";
+import { useFavoriteListWithFacilities } from "../../queries/useFavoriteListWithFacilities";
+import { useMyProfileQuery } from "../../queries/useMyProfileQuery";
+import { useMySettingsQuery } from "../../queries/useMySettingsQuery";
+import { useUpdateMySettingsMutation } from "../../queries/useUpdateMySettingsMutation";
+import { getAvailableAccessibilityIcons } from "../../utils/accessibility";
+import { facilityToAccessibilityInfo, mapFacilityToKakaoPlace } from "../../utils/facility";
+import { fontSizeToPx } from "../../utils/fontSize";
+import { ProfileImageFile } from "../../types/user";
 import {
   View,
   Text,
@@ -14,34 +23,65 @@ import {
   Image,
 } from "react-native";
 
-const profileImages = [
-  require("../assets/profile/profile1.png"),
-  require("../assets/profile/profile2.png"),
-  require("../assets/profile/profile3.png"),
-  require("../assets/profile/profile4.png"),
+const PROFILE_IMAGE_FILES: ProfileImageFile[] = [
+  "profile1.png",
+  "profile2.png",
+  "profile3.png",
+  "profile4.png",
 ];
 
-const placeIcons = {
-  서울숲: ['♿', '🚻', '🅿️'],
-  경복궁: ['♿', '🛗', '🚻'],
-};
+const profileImages = [
+  require("../../../assets/profile/profile1.png"),
+  require("../../../assets/profile/profile2.png"),
+  require("../../../assets/profile/profile3.png"),
+  require("../../../assets/profile/profile4.png"),
+];
 
 export default function MyPage() {
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const { isDark, setIsDark, fontSize } = useSettingStore();
-  const [profileImage, setProfileImage] = useState(profileImages[0]);
+  const { isDark, setIsDark, fontSize, setFontSize } = useSettingStore();
+  const [profileImageIndex, setProfileImageIndex] = useState(0);
+  const { rows: favoriteRows } = useFavoriteListWithFacilities('FREQUENT', 2);
+  const { data: profile } = useMyProfileQuery();
+  const { data: settings } = useMySettingsQuery();
+  const updateSettingsMutation = useUpdateMySettingsMutation();
+
+  // 로그인 직후 서버에 저장된 설정(다크모드/글자크기/프로필사진)으로 초기화.
+  // 이후 로컬 변경은 handleToggleDark/handleSelectProfileImage가 즉시 반영하므로
+  // 이 훅은 최초 로드 시 한 번만 상태를 맞추면 된다.
+  React.useEffect(() => {
+    if (!settings) return;
+    setIsDark(settings.dark_mode);
+    setFontSize(fontSizeToPx(settings.font_size));
+    const index = PROFILE_IMAGE_FILES.indexOf(settings.profile_image);
+    if (index !== -1) setProfileImageIndex(index);
+  }, [settings]);
+
+  const handleToggleDark = (value: boolean) => {
+    setIsDark(value);
+    updateSettingsMutation.mutate({ dark_mode: value });
+  };
+
+  const handleSelectProfileImage = (index: number) => {
+    setProfileImageIndex(index);
+    setShowProfileEdit(false);
+    updateSettingsMutation.mutate({ profile_image: PROFILE_IMAGE_FILES[index] });
+  };
 
   const colors = {
-    background: isDark ? "#222222" : "#FFFFFF",
-    card: isDark ? "#333333" : "#F5F5F5",
-    innerCard: isDark ? "#444444" : "#FFFFFF",
-    text: isDark ? "#FFFFFF" : "#000000",
-    subText: isDark ? "#BDBDBD" : "#808080",
-    divider: isDark ? "#555555" : "#DDDDDD",
-    tab: isDark ? "#BDBDBD" : "#808080",
-    activeTab: isDark ? "#FFFFFF" : "#000000",
-    iconBackground: isDark ? "#3A5A46" : "#DDF2E3",
+    background: isDark ? DARK.background : GREEN.screenBg,
+    card: isDark ? DARK.card : "#FFFFFF",
+    innerCard: isDark ? DARK.innerCard : GREEN.softer,
+    text: isDark ? DARK.text : "#000000",
+    subText: isDark ? DARK.subText : "#808080",
+    divider: isDark ? DARK.border : GREEN.border,
+    tab: isDark ? DARK.subText : "#808080",
+    activeTab: isDark ? DARK.text : GREEN.primary,
+    iconBackground: isDark ? "#3A5A46" : GREEN.tint,
+    accent: GREEN.primary,
+    editButton: isDark ? DARK.innerCard : GREEN.primary,
+    editIcon: isDark ? DARK.text : "#FFFFFF",
   };
 
   const sizes = {
@@ -53,6 +93,7 @@ export default function MyPage() {
 
   return (
     <SafeAreaView
+      edges={['top']}
       style={[
         styles.container,
         {
@@ -78,15 +119,15 @@ export default function MyPage() {
         <View style={styles.profileContainer}>
           <View style={styles.profileWrapper}>
             <Image
-              source={profileImage}
+              source={profileImages[profileImageIndex]}
               style={styles.profileImage}
             />
 
             <TouchableOpacity
-              style={styles.editButton}
+              style={[styles.editButton, { backgroundColor: colors.editButton }]}
               onPress={() => setShowProfileEdit(true)}
             >
-              <Text style={styles.editText}>✎</Text>
+              <Text style={[styles.editText, { color: colors.editIcon }]}>✎</Text>
             </TouchableOpacity>
           </View>
 
@@ -99,19 +140,7 @@ export default function MyPage() {
               },
             ]}
           >
-            문서은님
-          </Text>
-
-          <Text
-            style={[
-              styles.email,
-              {
-                color: colors.subText,
-                fontSize: sizes.small,
-              },
-            ]}
-          >
-            ez_trip@example.com
+            {profile?.email ?? '로그인이 필요해요'}
           </Text>
         </View>
 
@@ -148,7 +177,9 @@ export default function MyPage() {
 
           <Switch
             value={isDark}
-            onValueChange={setIsDark}
+            onValueChange={handleToggleDark}
+            trackColor={{ false: '#D8D8D8', true: GREEN.primary }}
+            thumbColor="#FFFFFF"
           />
         </View>
 
@@ -222,89 +253,61 @@ export default function MyPage() {
             </Text>
           </View>
 
-          <TouchableOpacity
-            style={[
-              styles.placeCard,
-              {
-                backgroundColor: colors.innerCard,
-              },
-            ]}
-            activeOpacity={0.8}
-            onPress={(e) => {
-              e.stopPropagation();
-              console.log("장소 상세정보 : 서울숲");
-            }}
-          >
-            <Text
-              style={[
-                styles.placeName,
-                {
-                  color: colors.text,
-                  fontSize: sizes.small,
-                },
-              ]}
-            >
-              서울숲
+          {favoriteRows.length === 0 ? (
+            <Text style={[styles.emptyText, { color: colors.subText, fontSize: sizes.small }]}>
+              즐겨찾는 장소가 없어요.
             </Text>
-
-            <View style={styles.iconContainer}>
-              {placeIcons.서울숲.map((icon, index) => (
-                <View
-                  key={index}
+          ) : (
+            favoriteRows.map((row) => {
+              if (!row.facility) return null;
+              const facility = row.facility;
+              return (
+                <TouchableOpacity
+                  key={row.item.id}
                   style={[
-                    styles.iconBox,
+                    styles.placeCard,
                     {
-                      backgroundColor: colors.iconBackground,
+                      backgroundColor: colors.innerCard,
                     },
                   ]}
+                  activeOpacity={0.8}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    navigation.navigate("PlaceDetail", { place: mapFacilityToKakaoPlace(facility) });
+                  }}
                 >
-                  <Text style={styles.iconText}>{icon}</Text>
-                </View>
-              ))}
-            </View>
-          </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.placeName,
+                      {
+                        color: colors.text,
+                        fontSize: sizes.small,
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {facility.name}
+                  </Text>
 
-          <TouchableOpacity
-            style={[
-              styles.placeCard,
-              {
-                backgroundColor: colors.innerCard,
-              },
-            ]}
-            activeOpacity={0.8}
-            onPress={(e) => {
-              e.stopPropagation();
-              console.log("장소 상세정보 : 경복궁");
-            }}
-          >
-            <Text
-              style={[
-                styles.placeName,
-                {
-                  color: colors.text,
-                  fontSize: sizes.small,
-                },
-              ]}
-            >
-              경복궁
-            </Text>
-
-            <View style={styles.iconContainer}>
-              {placeIcons.경복궁.map((icon, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.iconBox,
-                    {
-                      backgroundColor: colors.iconBackground,
-                    },
-                  ]}
-                >
-                  <Text style={styles.iconText}>{icon}</Text>
-                </View>
-              ))}
-            </View>
-          </TouchableOpacity>
+                  <View style={styles.iconContainer}>
+                    {getAvailableAccessibilityIcons(facilityToAccessibilityInfo(facility)).map((icon, index) => (
+                      <View
+                        key={index}
+                        style={[
+                          styles.iconBox,
+                          {
+                            backgroundColor: colors.iconBackground,
+                          },
+                        ]}
+                      >
+                        <Text style={styles.iconText}>{icon}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          )}
         </TouchableOpacity>
 
         {showProfileEdit && (
@@ -337,10 +340,7 @@ export default function MyPage() {
                 {profileImages.map((image, index) => (
                   <TouchableOpacity
                     key={index}
-                    onPress={() => {
-                      setProfileImage(image);
-                      setShowProfileEdit(false);
-                    }}
+                    onPress={() => handleSelectProfileImage(index)}
                   >
                     <Image
                       source={image}
@@ -385,11 +385,6 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 24,
     fontWeight: "bold",
-  },
-
-  email: {
-    marginTop: 5,
-    color: "gray",
   },
 
   divider: {
@@ -450,6 +445,10 @@ const styles = StyleSheet.create({
 
   placeName: {
     fontSize: 15,
+  },
+
+  emptyText: {
+    paddingVertical: 8,
   },
 
   iconContainer: {

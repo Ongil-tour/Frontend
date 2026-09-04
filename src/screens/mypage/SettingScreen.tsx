@@ -1,9 +1,13 @@
 import React from "react";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useSettingStore } from "../store/settingStore";
+import { useSettingStore } from "../../stores/useSettingStore";
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BottomTabBar from "../components/BottomTabBar";
+import BottomTabBar from "../../components/common/BottomTabBar";
+import { GREEN, DARK } from "../../constants/colors";
+import { useLogoutMutation } from "../../queries/useLogoutMutation";
+import { useDeleteAccountMutation } from "../../queries/useDeleteAccountMutation";
+import { useClearAllFavoritesMutation } from "../../queries/useClearAllFavoritesMutation";
 import {
   View,
   Text,
@@ -23,15 +27,19 @@ export default function Setting() {
     setModalType(type);
     setModalVisible(true);
   };
+  const logoutMutation = useLogoutMutation();
+  const deleteAccountMutation = useDeleteAccountMutation();
+  const clearAllFavoritesMutation = useClearAllFavoritesMutation();
 
   const colors = {
-    background: isDark ? "#222222" : "#FFFFFF",
-    card: isDark ? "#333333" : "#F5F5F5",
-    innerCard: isDark ? "#444444" : "#FFFFFF",
-    buttonBackground: isDark ? "#555555" : "#EAEAEA",
-    border: isDark ? "#555555" : "#E5E5E5",
-    text: isDark ? "#FFFFFF" : "#000000",
-    subText: isDark ? "#BDBDBD" : "#808080",
+    background: isDark ? DARK.background : GREEN.screenBg,
+    card: isDark ? DARK.card : "#FFFFFF",
+    innerCard: isDark ? DARK.innerCard : GREEN.softer,
+    buttonBackground: isDark ? DARK.border : GREEN.soft,
+    border: isDark ? DARK.border : GREEN.border,
+    text: isDark ? DARK.text : "#000000",
+    subText: isDark ? DARK.subText : "#808080",
+    selectedText: isDark ? DARK.text : GREEN.primaryText,
     danger: "#FF0000",
   };
 
@@ -44,13 +52,13 @@ export default function Setting() {
 
   const confirmAction = () => {
     if (modalType === "로그아웃")
-      console.log("로그아웃 실행");
+      logoutMutation.mutate();
     else if (modalType === "회원 탈퇴")
-      console.log("회원 탈퇴 실행");
+      deleteAccountMutation.mutate();
     else if (modalType === "검색 기록")
       console.log("검색 기록 삭제 실행");
     else if (modalType === "즐겨찾기")
-      console.log("즐겨찾기 삭제 실행");
+      clearAllFavoritesMutation.mutate();
     
     setModalVisible(false);
 
@@ -71,6 +79,7 @@ export default function Setting() {
 
   return (
     <SafeAreaView
+      edges={['top']}
       style={[
         styles.container,
         {
@@ -78,6 +87,7 @@ export default function Setting() {
         },
       ]}
     >
+      <View style={styles.content}>
       {/* 상단 */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -164,7 +174,8 @@ export default function Setting() {
             <Text
               style={{
                 fontSize: 15,
-                color: colors.text,
+                color: fontSize === 15 ? colors.selectedText : colors.text,
+                fontWeight: fontSize === 15 ? '700' : '400',
               }}
             >
               기본
@@ -184,7 +195,8 @@ export default function Setting() {
             <Text
               style={{
                 fontSize: 17,
-                color: colors.text,
+                color: fontSize === 17 ? colors.selectedText : colors.text,
+                fontWeight: fontSize === 17 ? '700' : '400',
               }}
             >
               크게
@@ -204,7 +216,8 @@ export default function Setting() {
             <Text
               style={{
                 fontSize: 19,
-                color: colors.text,
+                color: fontSize === 19 ? colors.selectedText : colors.text,
+                fontWeight: fontSize === 19 ? '700' : '400',
               }}
             >
               더 크게
@@ -421,9 +434,9 @@ export default function Setting() {
         </Text>
       </View>
     )}
+      </View>
 
-    <BottomTabBar activeTab="mypage" />
-    
+      <BottomTabBar activeTab="mypage" />
     </SafeAreaView>
   );
 }
@@ -431,7 +444,10 @@ export default function Setting() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+  },
+
+  content: {
+    flex: 1,
     padding: 20,
   },
 
