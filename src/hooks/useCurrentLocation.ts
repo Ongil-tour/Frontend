@@ -12,10 +12,15 @@ export function useCurrentLocation() {
       setError('위치 권한이 필요합니다.');
       return null;
     }
-    const pos = await Location.getCurrentPositionAsync({});
-    const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-    setLocation(coords);
-    return coords;
+    try {
+      const pos = await Location.getCurrentPositionAsync({});
+      const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      setLocation(coords);
+      return coords;
+    } catch {
+      setError('현재 위치를 확인할 수 없습니다. 위치 서비스(GPS)가 켜져 있는지 확인해주세요.');
+      return null;
+    }
   }, []);
 
   return { location, error, getCurrentLocation };

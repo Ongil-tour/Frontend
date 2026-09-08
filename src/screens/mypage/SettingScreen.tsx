@@ -50,27 +50,28 @@ export default function Setting() {
     small: fontSize - 1,
   };
 
-  const confirmAction = () => {
-    if (modalType === "로그아웃")
-      logoutMutation.mutate();
-    else if (modalType === "회원 탈퇴")
-      deleteAccountMutation.mutate();
-    else if (modalType === "검색 기록")
-      console.log("검색 기록 삭제 실행");
-    else if (modalType === "즐겨찾기")
-      clearAllFavoritesMutation.mutate();
-    
+  const confirmAction = async () => {
+    const type = modalType;
     setModalVisible(false);
 
-    setToast(
-      modalType === "검색 기록"
-        ? "검색 기록 전체가 삭제되었습니다."
-        : modalType === "즐겨찾기"
-        ? "즐겨찾기 전체가 삭제되었습니다."
-        : modalType === "로그아웃"
-        ? "로그아웃되었습니다."
-        : "회원 탈퇴가 완료되었습니다."
-    );
+    try {
+      if (type === "로그아웃") {
+        try {
+          await logoutMutation.mutateAsync();
+        } catch {
+          // 서버 호출이 실패해도 로컬 세션은 정리된다 (useLogoutMutation의 onSettled).
+        }
+        setToast("로그아웃되었습니다.");
+      } else if (type === "회원 탈퇴") {
+        await deleteAccountMutation.mutateAsync();
+        setToast("회원 탈퇴가 완료되었습니다.");
+      } else if (type === "즐겨찾기") {
+        await clearAllFavoritesMutation.mutateAsync();
+        setToast("즐겨찾기 전체가 삭제되었습니다.");
+      }
+    } catch {
+      setToast("요청 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+    }
 
     setTimeout(() => {
       setToast("");
@@ -238,33 +239,6 @@ export default function Setting() {
       >
         기록 관리
       </Text>
-
-      <TouchableOpacity
-        style={[
-          styles.menu,
-          {
-            backgroundColor: colors.innerCard,
-            borderColor: colors.border,
-          },
-        ]}
-        onPress={() => openModal("검색 기록")}
-      >
-        <Text
-          style={{
-            color: colors.text,
-            fontSize: sizes.normal,
-          }}
-        >
-          검색 기록 전체 삭제
-        </Text>
-        <Text
-          style={{
-            color: colors.subText,
-          }}
-        >
-        ›
-        </Text>
-      </TouchableOpacity>
 
       <TouchableOpacity
         style={[

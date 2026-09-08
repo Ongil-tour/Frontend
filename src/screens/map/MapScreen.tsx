@@ -80,7 +80,7 @@ export default function MapScreen() {
     }
     const coords = await getCurrentLocation();
     if (!coords) {
-      Alert.alert('위치 권한 필요', '설정에서 위치 권한을 허용해주세요.');
+      Alert.alert('위치 확인 실패', '위치 권한과 위치 서비스(GPS) 설정을 확인해주세요.');
       return;
     }
     setSelectedRadiusKm(km);
@@ -106,7 +106,7 @@ export default function MapScreen() {
   const handleLocatePress = async () => {
     const coords = await getCurrentLocation();
     if (!coords) {
-      Alert.alert('위치 권한 필요', '설정에서 위치 권한을 허용해주세요.');
+      Alert.alert('위치 확인 실패', '위치 권한과 위치 서비스(GPS) 설정을 확인해주세요.');
       return;
     }
     mapRef.current?.showCurrentLocation(coords.lat, coords.lng);
