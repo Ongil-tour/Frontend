@@ -12,6 +12,7 @@ export interface FavoriteList {
 export interface FavoriteItem {
   id: string;
   facility_id: string;
+  source: FacilitySource;
   list_id: string;
   created_at: string;
 }

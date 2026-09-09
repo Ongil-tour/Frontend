@@ -143,7 +143,45 @@ export default function PlaceStorage() {
         ) : (
           <ScrollView showsVerticalScrollIndicator={false}>
             {rows.map((row) => {
-              if (!row.facility) return null;
+              if (!row.facility) {
+                // 카카오 소스 즐겨찾기는 이름/주소를 다시 가져올 방법이 없어(백엔드가
+                // id만 저장) 목록에서 조용히 빠지는 대신 제거 가능한 자리만 표시한다.
+                if (row.item.source === 'kakao') {
+                  return (
+                    <View
+                      key={row.item.id}
+                      style={[styles.placeCard, { backgroundColor: colors.card }]}
+                    >
+                      <TouchableOpacity
+                        style={styles.starButton}
+                        onPress={() =>
+                          removeFavoriteMutation.mutate({
+                            favoriteId: row.item.id,
+                            facilityId: row.item.facility_id,
+                          })
+                        }
+                      >
+                        <Text style={[styles.star, { color: GREEN.primary }]}>★</Text>
+                      </TouchableOpacity>
+                      <View style={styles.info}>
+                        <Text
+                          style={[styles.placeName, { color: colors.text, fontSize: fontSize + 2 }]}
+                          numberOfLines={1}
+                        >
+                          카카오 장소
+                        </Text>
+                        <Text
+                          style={[styles.address, { color: colors.subText, fontSize: fontSize - 2 }]}
+                          numberOfLines={1}
+                        >
+                          상세 정보를 불러올 수 없어요.
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                }
+                return null;
+              }
               const facility = row.facility;
               return (
                 <TouchableOpacity

@@ -59,14 +59,22 @@ export default function MyPage() {
   }, [settings]);
 
   const handleToggleDark = (value: boolean) => {
+    const previous = isDark;
     setIsDark(value);
-    updateSettingsMutation.mutate({ dark_mode: value });
+    updateSettingsMutation.mutate(
+      { dark_mode: value },
+      { onError: () => setIsDark(previous) }
+    );
   };
 
   const handleSelectProfileImage = (index: number) => {
+    const previous = profileImageIndex;
     setProfileImageIndex(index);
     setShowProfileEdit(false);
-    updateSettingsMutation.mutate({ profile_image: PROFILE_IMAGE_FILES[index] });
+    updateSettingsMutation.mutate(
+      { profile_image: PROFILE_IMAGE_FILES[index] },
+      { onError: () => setProfileImageIndex(previous) }
+    );
   };
 
   const colors = {
@@ -259,7 +267,26 @@ export default function MyPage() {
             </Text>
           ) : (
             favoriteRows.map((row) => {
-              if (!row.facility) return null;
+              if (!row.facility) {
+                // 카카오 소스로 저장된 즐겨찾기는 이름/주소를 어디서도 다시 가져올 수
+                // 없어서(백엔드가 id만 저장) 목록에서 조용히 빠지는 대신 자리만 표시한다.
+                if (row.item.source === 'kakao') {
+                  return (
+                    <View
+                      key={row.item.id}
+                      style={[styles.placeCard, { backgroundColor: colors.innerCard }]}
+                    >
+                      <Text
+                        style={[styles.placeName, { color: colors.subText, fontSize: sizes.small }]}
+                        numberOfLines={1}
+                      >
+                        카카오 장소 (상세 정보 없음)
+                      </Text>
+                    </View>
+                  );
+                }
+                return null;
+              }
               const facility = row.facility;
               return (
                 <TouchableOpacity

@@ -225,17 +225,38 @@ const mapHtml = `
       }, 2500);
     }
 
+    // 지도 클릭당 카테고리 수만큼 API 호출이 나가므로, 이 앱과 관련 없거나
+    // (학원/부동산처럼) 밀집도가 높아 엉뚱한 최근접 결과를 만드는 카테고리는 뺐다.
     var CLICK_CATEGORY_CODES = [
-      'MT1', 'CS2', 'PS3', 'SC4', 'AC5', 'PK6', 'OL7', 'SW8', 'BK9',
-      'CT1', 'AG2', 'PO3', 'AT4', 'AD5', 'FD6', 'CE7', 'HP8', 'PM9'
+      'MT1', 'CS2', 'PK6', 'SW8', 'PO3',
+      'CT1', 'AT4', 'AD5', 'FD6', 'CE7', 'HP8', 'PM9'
     ];
     var CLICK_SEARCH_RADIUS = 50;
+    // 이전 클릭의 카테고리 검색이 아직 안 끝났으면 새 클릭을 무시해서
+    // API 호출이 겹겹이 쌓이는 것과, 응답이 뒤섞여 옛날 클릭 결과가
+    // 나중에 화면에 뜨는 것을 함께 막는다.
+    var findNearestPoiInFlight = false;
 
     function findNearestPoi(lat, lng, callback) {
       var center = new kakao.maps.LatLng(lat, lng);
       var pending = CLICK_CATEGORY_CODES.length;
       var nearestPlace = null;
       var nearestDistance = Infinity;
+      var settled = false;
+      var timeoutId;
+
+      function finish() {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        findNearestPoiInFlight = false;
+        callback(nearestPlace);
+      }
+
+      findNearestPoiInFlight = true;
+      // 콜백이 하나라도 안 돌아오면(백그라운드 전환 등으로 유실) pending이 0에
+      // 못 닿아 가드가 영원히 잠길 수 있어, 타임아웃으로 강제 해제한다.
+      timeoutId = setTimeout(finish, 8000);
 
       CLICK_CATEGORY_CODES.forEach(function(code) {
         places.categorySearch(code, function(result, status) {
@@ -249,7 +270,7 @@ const mapHtml = `
           }
           pending -= 1;
           if (pending <= 0) {
-            callback(nearestPlace);
+            finish();
           }
         }, {
           location: center,
@@ -282,6 +303,8 @@ const mapHtml = `
     }
 
     kakao.maps.event.addListener(map, 'click', function(mouseEvent) {
+      if (findNearestPoiInFlight) return;
+
       var latlng = mouseEvent.latLng;
       var lat = latlng.getLat();
       var lng = latlng.getLng();
