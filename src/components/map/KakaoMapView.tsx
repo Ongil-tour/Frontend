@@ -354,6 +354,8 @@ const mapHtml = `
           }
         });
       });
+
+      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'MAP_READY' }));
     });
   </script>
 </body>
@@ -375,12 +377,31 @@ interface Props {
 
 function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) {
   const webViewRef = useRef<WebView>(null);
+  // kakao.maps.load()가 끝나기 전엔 지도/좌표 생성자들이 아직 없어서, RN에서
+  // 그 전에 버튼을 눌러 injectJavaScript가 먼저 들어오면 웹뷰 쪽에서 에러가 난다.
+  // MAP_READY를 받기 전까지는 실행하지 않고 큐에 쌓아뒀다가 순서대로 흘려보낸다.
+  const isMapReadyRef = useRef(false);
+  const pendingCommandsRef = useRef<string[]>([]);
+
+  const runCommand = (js: string) => {
+    if (isMapReadyRef.current) {
+      webViewRef.current?.injectJavaScript(js);
+    } else {
+      pendingCommandsRef.current.push(js);
+    }
+  };
 
   const handleMessage = (event: WebViewMessageEvent) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
       if (data.type === 'MAP_ERROR') {
         Alert.alert('지도를 불러오지 못했습니다', data.message);
+        return;
+      }
+      if (data.type === 'MAP_READY') {
+        isMapReadyRef.current = true;
+        pendingCommandsRef.current.forEach((js) => webViewRef.current?.injectJavaScript(js));
+        pendingCommandsRef.current = [];
         return;
       }
     } catch {
@@ -394,22 +415,22 @@ function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) 
       const args = origin
         ? `${JSON.stringify(category)}, ${origin.lat}, ${origin.lng}, ${origin.radiusM}`
         : JSON.stringify(category);
-      webViewRef.current?.injectJavaScript(`searchFacilityCategory(${args}); true;`);
+      runCommand(`searchFacilityCategory(${args}); true;`);
     },
     searchKeyword: (keyword: string) => {
-      webViewRef.current?.injectJavaScript(`searchKeyword(${JSON.stringify(keyword)}); true;`);
+      runCommand(`searchKeyword(${JSON.stringify(keyword)}); true;`);
     },
     zoomIn: () => {
-      webViewRef.current?.injectJavaScript('zoomIn(); true;');
+      runCommand('zoomIn(); true;');
     },
     zoomOut: () => {
-      webViewRef.current?.injectJavaScript('zoomOut(); true;');
+      runCommand('zoomOut(); true;');
     },
     showCurrentLocation: (lat: number, lng: number) => {
-      webViewRef.current?.injectJavaScript(`showCurrentLocation(${lat}, ${lng}); true;`);
+      runCommand(`showCurrentLocation(${lat}, ${lng}); true;`);
     },
     showRadiusCircle: (lat: number, lng: number, radiusM: number) => {
-      webViewRef.current?.injectJavaScript(`showRadiusCircle(${lat}, ${lng}, ${radiusM}); true;`);
+      runCommand(`showRadiusCircle(${lat}, ${lng}, ${radiusM}); true;`);
     },
   }));
 
