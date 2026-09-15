@@ -479,7 +479,9 @@ function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) 
         scrollEnabled={false}
         bounces={false}
         overScrollMode="never"
-        webviewDebuggingEnabled={__DEV__}
+        webviewDebuggingEnabled
+        // TODO: 지도 초기화 원인 진단용으로 릴리즈 빌드에서도 임시로 켜둠.
+        // 원인 찾으면 다시 __DEV__로 되돌릴 것.
       />
       {!isMapReady && (
         <View style={styles.loadingOverlay} pointerEvents="none">
