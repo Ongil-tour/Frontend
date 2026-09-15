@@ -1,6 +1,6 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Alert } from 'react-native';
 
 const KAKAO_JS_KEY = process.env.EXPO_PUBLIC_KAKAO_JS_KEY;
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -13,10 +13,33 @@ const mapHtml = `
   <style>
     html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
   </style>
+  <script>
+    // 카카오 SDK 로드/초기화 실패가 지금까지 그냥 흰 화면으로만 나왔어서,
+    // 어떤 에러든 RN 쪽으로 보고하도록 가장 먼저 등록해둔다.
+    window.onerror = function (message, source, lineno) {
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'MAP_ERROR',
+          message: String(message) + ' (' + source + ':' + lineno + ')'
+        }));
+      }
+    };
+  </script>
 </head>
 <body>
   <div id="map"></div>
-  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&libraries=services"></script>
+  <script
+    src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&libraries=services"
+    onerror="window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({type:'MAP_ERROR', message:'카카오맵 SDK 스크립트 로드 실패 (네트워크 또는 앱키 문제)'}))"
+  ></script>
+  <script>
+    if (typeof kakao === 'undefined' || !kakao.maps) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'MAP_ERROR',
+        message: '카카오맵 SDK가 초기화되지 않았습니다 (앱키의 플랫폼 도메인 등록 여부를 확인하세요)'
+      }));
+    }
+  </script>
   <script>
     var map = new kakao.maps.Map(document.getElementById('map'), {
       center: new kakao.maps.LatLng(37.5665, 126.9780),
@@ -346,6 +369,19 @@ interface Props {
 function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) {
   const webViewRef = useRef<WebView>(null);
 
+  const handleMessage = (event: WebViewMessageEvent) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data.type === 'MAP_ERROR') {
+        Alert.alert('지도를 불러오지 못했습니다', data.message);
+        return;
+      }
+    } catch {
+      // JSON이 아니면 그대로 부모에게 넘긴다.
+    }
+    onMessage(event);
+  };
+
   useImperativeHandle(ref, () => ({
     searchFacilityCategory: (category: string, origin?: { lat: number; lng: number; radiusM: number }) => {
       const args = origin
@@ -376,7 +412,16 @@ function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) 
       originWhitelist={['*']}
       source={{ html: mapHtml, baseUrl: 'http://localhost' }}
       style={styles.map}
-      onMessage={onMessage}
+      onMessage={handleMessage}
+      onError={(syntheticEvent) => {
+        Alert.alert('지도를 불러오지 못했습니다', syntheticEvent.nativeEvent.description);
+      }}
+      onHttpError={(syntheticEvent) => {
+        Alert.alert(
+          '지도를 불러오지 못했습니다',
+          `HTTP ${syntheticEvent.nativeEvent.statusCode}: ${syntheticEvent.nativeEvent.url}`
+        );
+      }}
       scrollEnabled={false}
       bounces={false}
       overScrollMode="never"
