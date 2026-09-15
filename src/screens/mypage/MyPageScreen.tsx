@@ -48,32 +48,43 @@ export default function MyPage() {
   const updateSettingsMutation = useUpdateMySettingsMutation();
 
   // 로그인 직후 서버에 저장된 설정(다크모드/글자크기/프로필사진)으로 초기화.
-  // 이후 로컬 변경은 handleToggleDark/handleSelectProfileImage가 즉시 반영하므로
-  // 이 훅은 최초 로드 시 한 번만 상태를 맞추면 된다.
+  // 이후 로컬 변경은 handleToggleDark/handleSelectProfileImage가 즉시 반영한다.
+  // useUpdateMySettingsMutation의 onSuccess가 매번 이 쿼리 캐시를 갱신하므로,
+  // didInitRef 없이 [settings]에만 의존하면 우리 쪽 저장이 성공할 때마다 이 효과가
+  // 다시 돌면서 그 사이 진행 중이던 다른 낙관적 변경을 옛 스냅샷으로 되돌려버린다.
+  const didInitRef = React.useRef(false);
   React.useEffect(() => {
-    if (!settings) return;
+    if (!settings || didInitRef.current) return;
+    didInitRef.current = true;
     setIsDark(settings.dark_mode);
     setFontSize(fontSizeToPx(settings.font_size));
     const index = PROFILE_IMAGE_FILES.indexOf(settings.profile_image);
     if (index !== -1) setProfileImageIndex(index);
   }, [settings]);
 
+  // 각 필드마다 "가장 최근 시도"를 따로 추적해서, 늦게 실패한 옛날 요청의 롤백이
+  // 그 사이 성공한 더 최신 변경을 덮어쓰지 않게 한다.
+  const darkToggleAttempt = React.useRef(0);
+  const profileImageAttempt = React.useRef(0);
+
   const handleToggleDark = (value: boolean) => {
     const previous = isDark;
+    const attempt = ++darkToggleAttempt.current;
     setIsDark(value);
     updateSettingsMutation.mutate(
       { dark_mode: value },
-      { onError: () => setIsDark(previous) }
+      { onError: () => { if (attempt === darkToggleAttempt.current) setIsDark(previous); } }
     );
   };
 
   const handleSelectProfileImage = (index: number) => {
     const previous = profileImageIndex;
+    const attempt = ++profileImageAttempt.current;
     setProfileImageIndex(index);
     setShowProfileEdit(false);
     updateSettingsMutation.mutate(
       { profile_image: PROFILE_IMAGE_FILES[index] },
-      { onError: () => setProfileImageIndex(previous) }
+      { onError: () => { if (attempt === profileImageAttempt.current) setProfileImageIndex(previous); } }
     );
   };
 

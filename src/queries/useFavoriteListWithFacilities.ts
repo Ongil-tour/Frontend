@@ -11,9 +11,10 @@ export function useFavoriteListWithFacilities(listType: FavoriteListType, limit?
   const itemsQuery = useFavoriteListItemsQuery(list?.id);
   const items = (limit != null ? itemsQuery.data?.slice(0, limit) : itemsQuery.data) ?? [];
   // 카카오 소스 항목의 facility_id는 우리 DB의 UUID가 아니라서 /facilities/{id}가
-  // 항상 실패한다(422) - 애초에 요청을 보내지 않는다. internal 소스만 조회한다.
+  // 항상 실패한다(422) - 애초에 요청을 보내지 않는다. source가 없거나 다른 값이면
+  // (레거시 데이터 등) internal로 간주해 기존처럼 조회를 시도한다.
   const facilityQueries = useFacilitiesQuery(
-    items.map((item) => (item.source === 'internal' ? item.facility_id : ''))
+    items.map((item) => (item.source === 'kakao' ? '' : item.facility_id))
   );
 
   const rows = items.map((item, i) => ({

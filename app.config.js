@@ -53,6 +53,11 @@ export default {
       ],
       "expo-secure-store",
       "expo-status-bar"
-    ]
+    ],
+    extra: {
+      eas: {
+        projectId: "cba916a8-1150-4dd9-b9cc-ec5f4ea572a9"
+      }
+    }
   }
 };
