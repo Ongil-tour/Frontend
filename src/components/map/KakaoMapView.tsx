@@ -24,6 +24,64 @@ const mapHtml = `
         }));
       }
     };
+
+    // USB 없이도 원인을 볼 수 있도록, 실제 네트워크 요청 자체를 가로채서 기록해둔다
+    // (카카오 SDK가 내부적으로 만드는 <script>/fetch/XHR 요청 포함).
+    window.__mapDebugLog = [];
+    function logDebug(entry) {
+      window.__mapDebugLog.push(entry);
+    }
+
+    var origCreateElement = document.createElement.bind(document);
+    document.createElement = function (tagName) {
+      var el = origCreateElement(tagName);
+      if (String(tagName).toLowerCase() === 'script') {
+        el.addEventListener('load', function () {
+          logDebug('SCRIPT OK: ' + el.src);
+        });
+        el.addEventListener('error', function () {
+          logDebug('SCRIPT FAIL: ' + el.src);
+        });
+      }
+      return el;
+    };
+
+    if (window.fetch) {
+      var origFetch = window.fetch.bind(window);
+      window.fetch = function (input) {
+        var url = typeof input === 'string' ? input : (input && input.url) || String(input);
+        logDebug('FETCH START: ' + url);
+        return origFetch.apply(window, arguments).then(function (res) {
+          logDebug('FETCH OK (' + res.status + '): ' + url);
+          return res;
+        }).catch(function (err) {
+          logDebug('FETCH FAIL: ' + url + ' - ' + (err && err.message));
+          throw err;
+        });
+      };
+    }
+
+    var OrigXHR = window.XMLHttpRequest;
+    window.XMLHttpRequest = function () {
+      var xhr = new OrigXHR();
+      var url;
+      var origOpen = xhr.open.bind(xhr);
+      xhr.open = function (method, u) {
+        url = u;
+        return origOpen.apply(xhr, arguments);
+      };
+      xhr.addEventListener('load', function () {
+        logDebug('XHR OK (' + xhr.status + '): ' + url);
+      });
+      xhr.addEventListener('error', function () {
+        logDebug('XHR FAIL: ' + url);
+      });
+      xhr.addEventListener('timeout', function () {
+        logDebug('XHR TIMEOUT: ' + url);
+      });
+      return xhr;
+    };
+
     // window.onerror는 던져진(throw) 에러만 잡는다. 카카오 SDK 내부가 실패한
     // Promise를 조용히 삼키면(catch 없이) 여기 안 걸리고 그냥 멈춘 것처럼 보이므로
     // unhandledrejection도 같이 잡는다.
@@ -39,9 +97,10 @@ const mapHtml = `
     // 일정 시간 후에도 안 끝나면 그 사실 자체를 알려준다.
     window.__mapReadyTimeout = setTimeout(function () {
       if (window.ReactNativeWebView) {
+        var log = window.__mapDebugLog.length ? window.__mapDebugLog.join('\n') : '(기록된 네트워크 요청 없음)';
         window.ReactNativeWebView.postMessage(JSON.stringify({
           type: 'MAP_ERROR',
-          message: '카카오맵 초기화가 15초 넘게 끝나지 않았습니다 (네트워크 지연 또는 무한 대기)'
+          message: '카카오맵 초기화가 15초 넘게 끝나지 않았습니다.\n\n' + log
         }));
       }
     }, 15000);
