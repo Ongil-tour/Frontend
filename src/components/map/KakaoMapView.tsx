@@ -29,7 +29,7 @@ const mapHtml = `
 <body>
   <div id="map"></div>
   <script
-    src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&libraries=services"
+    src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&libraries=services&autoload=false"
     onerror="window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({type:'MAP_ERROR', message:'카카오맵 SDK 스크립트 로드 실패 (네트워크 또는 앱키 문제)'}))"
   ></script>
   <script>
@@ -41,13 +41,11 @@ const mapHtml = `
     }
   </script>
   <script>
-    var map = new kakao.maps.Map(document.getElementById('map'), {
-      center: new kakao.maps.LatLng(37.5665, 126.9780),
-      level: 5
-    });
-
-    var places = new kakao.maps.services.Places();
-    var geocoder = new kakao.maps.services.Geocoder();
+    // autoload=false + kakao.maps.load(): 스크립트가 로드된 직후에도 kakao.maps.*
+    // 생성자들이 아직 준비 안 됐을 수 있어서(비동기 초기화), 실제로 다 준비된 뒤에만
+    // 콜백이 실행되는 이 방식을 써야 한다. 그냥 바로 new kakao.maps.LatLng(...) 하면
+    // 타이밍에 따라 "not a constructor" 에러가 나는데, 느린 기기/네트워크에서 특히 잘 남.
+    var map, places, geocoder, markerImage;
     var markers = [];
     var clickMarker = null;
     var currentLocationOverlay = null;
@@ -57,11 +55,6 @@ const mapHtml = `
       '<path d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.268 21.732 0 14 0z" fill="#22A45D"/>' +
       '<circle cx="14" cy="14" r="5" fill="white"/>' +
       '</svg>';
-    var markerImage = new kakao.maps.MarkerImage(
-      'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(GREEN_PIN_SVG),
-      new kakao.maps.Size(28, 38),
-      { offset: new kakao.maps.Point(14, 38) }
-    );
 
     function clearMarkers() {
       markers.forEach(function(m) { m.setMap(null); });
@@ -325,27 +318,41 @@ const mapHtml = `
       });
     }
 
-    kakao.maps.event.addListener(map, 'click', function(mouseEvent) {
-      if (findNearestPoiInFlight) return;
+    kakao.maps.load(function() {
+      map = new kakao.maps.Map(document.getElementById('map'), {
+        center: new kakao.maps.LatLng(37.5665, 126.9780),
+        level: 5
+      });
+      places = new kakao.maps.services.Places();
+      geocoder = new kakao.maps.services.Geocoder();
+      markerImage = new kakao.maps.MarkerImage(
+        'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(GREEN_PIN_SVG),
+        new kakao.maps.Size(28, 38),
+        { offset: new kakao.maps.Point(14, 38) }
+      );
 
-      var latlng = mouseEvent.latLng;
-      var lat = latlng.getLat();
-      var lng = latlng.getLng();
+      kakao.maps.event.addListener(map, 'click', function(mouseEvent) {
+        if (findNearestPoiInFlight) return;
 
-      if (clickMarker) {
-        clickMarker.setMap(null);
-      }
-      clickMarker = new kakao.maps.Marker({ position: latlng, image: markerImage, map: map });
+        var latlng = mouseEvent.latLng;
+        var lat = latlng.getLat();
+        var lng = latlng.getLng();
 
-      findNearestPoi(lat, lng, function(nearestPlace) {
-        if (nearestPlace) {
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'MAP_CLICK',
-            place: toPlaceData(nearestPlace)
-          }));
-        } else {
-          reportAddressAt(lat, lng);
+        if (clickMarker) {
+          clickMarker.setMap(null);
         }
+        clickMarker = new kakao.maps.Marker({ position: latlng, image: markerImage, map: map });
+
+        findNearestPoi(lat, lng, function(nearestPlace) {
+          if (nearestPlace) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'MAP_CLICK',
+              place: toPlaceData(nearestPlace)
+            }));
+          } else {
+            reportAddressAt(lat, lng);
+          }
+        });
       });
     });
   </script>
