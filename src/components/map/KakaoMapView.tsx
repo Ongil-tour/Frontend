@@ -1,6 +1,6 @@
-import { forwardRef, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
-import { StyleSheet, Alert } from 'react-native';
+import { StyleSheet, Alert, View, ActivityIndicator, Text } from 'react-native';
 
 const KAKAO_JS_KEY = process.env.EXPO_PUBLIC_KAKAO_JS_KEY;
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -24,6 +24,27 @@ const mapHtml = `
         }));
       }
     };
+    // window.onerror는 던져진(throw) 에러만 잡는다. 카카오 SDK 내부가 실패한
+    // Promise를 조용히 삼키면(catch 없이) 여기 안 걸리고 그냥 멈춘 것처럼 보이므로
+    // unhandledrejection도 같이 잡는다.
+    window.addEventListener('unhandledrejection', function (event) {
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'MAP_ERROR',
+          message: 'Unhandled rejection: ' + (event.reason && event.reason.message ? event.reason.message : String(event.reason))
+        }));
+      }
+    });
+    // MAP_READY가 너무 오래 걸리면(네트워크 지연 vs 완전히 멈춤을 구분하기 위해)
+    // 일정 시간 후에도 안 끝나면 그 사실 자체를 알려준다.
+    window.__mapReadyTimeout = setTimeout(function () {
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'MAP_ERROR',
+          message: '카카오맵 초기화가 15초 넘게 끝나지 않았습니다 (네트워크 지연 또는 무한 대기)'
+        }));
+      }
+    }, 15000);
   </script>
 </head>
 <body>
@@ -355,6 +376,7 @@ const mapHtml = `
         });
       });
 
+      clearTimeout(window.__mapReadyTimeout);
       window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'MAP_READY' }));
     });
   </script>
@@ -382,6 +404,8 @@ function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) 
   // MAP_READY를 받기 전까지는 실행하지 않고 큐에 쌓아뒀다가 순서대로 흘려보낸다.
   const isMapReadyRef = useRef(false);
   const pendingCommandsRef = useRef<string[]>([]);
+  // "로딩 중"과 "그냥 멈춤"을 화면에서 구분할 수 있도록 스피너를 띄워둔다.
+  const [isMapReady, setIsMapReady] = useState(false);
 
   const runCommand = (js: string) => {
     if (isMapReadyRef.current) {
@@ -400,6 +424,7 @@ function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) 
       }
       if (data.type === 'MAP_READY') {
         isMapReadyRef.current = true;
+        setIsMapReady(true);
         pendingCommandsRef.current.forEach((js) => webViewRef.current?.injectJavaScript(js));
         pendingCommandsRef.current = [];
         return;
@@ -435,31 +460,52 @@ function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) 
   }));
 
   return (
-    <WebView
-      ref={webViewRef}
-      originWhitelist={['*']}
-      source={{ html: mapHtml, baseUrl: 'http://localhost' }}
-      style={styles.map}
-      onMessage={handleMessage}
-      onError={(syntheticEvent) => {
-        Alert.alert('지도를 불러오지 못했습니다', syntheticEvent.nativeEvent.description);
-      }}
-      onHttpError={(syntheticEvent) => {
-        Alert.alert(
-          '지도를 불러오지 못했습니다',
-          `HTTP ${syntheticEvent.nativeEvent.statusCode}: ${syntheticEvent.nativeEvent.url}`
-        );
-      }}
-      scrollEnabled={false}
-      bounces={false}
-      overScrollMode="never"
-      webviewDebuggingEnabled={__DEV__}
-    />
+    <View style={styles.container}>
+      <WebView
+        ref={webViewRef}
+        originWhitelist={['*']}
+        source={{ html: mapHtml, baseUrl: 'http://localhost' }}
+        style={styles.map}
+        onMessage={handleMessage}
+        onError={(syntheticEvent) => {
+          Alert.alert('지도를 불러오지 못했습니다', syntheticEvent.nativeEvent.description);
+        }}
+        onHttpError={(syntheticEvent) => {
+          Alert.alert(
+            '지도를 불러오지 못했습니다',
+            `HTTP ${syntheticEvent.nativeEvent.statusCode}: ${syntheticEvent.nativeEvent.url}`
+          );
+        }}
+        scrollEnabled={false}
+        bounces={false}
+        overScrollMode="never"
+        webviewDebuggingEnabled={__DEV__}
+      />
+      {!isMapReady && (
+        <View style={styles.loadingOverlay} pointerEvents="none">
+          <ActivityIndicator size="large" color="#22A45D" />
+          <Text style={styles.loadingText}>지도를 불러오는 중...</Text>
+        </View>
+      )}
+    </View>
   );
 }
 
 export default forwardRef(KakaoMapView);
 
 const styles = StyleSheet.create({
+  container: { flex: 1 },
   map: { flex: 1 },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  loadingText: { color: '#666666', fontSize: 14 },
 });
