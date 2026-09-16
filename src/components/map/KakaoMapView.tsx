@@ -486,7 +486,11 @@ function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) 
       <WebView
         ref={webViewRef}
         originWhitelist={['*']}
-        source={{ html: mapHtml, baseUrl: 'http://localhost' }}
+        // 카카오맵 SDK가 kakao.maps.load() 내부에서 추가 리소스를
+        // location.protocol 그대로 따라가서 불러온다(https면 https, http면
+        // http). http://localhost였을 때 그 리소스가 평문 HTTP로 나가서
+        // Android 9+ cleartext 차단에 막혔었음 - https로 바꿔서 회피.
+        source={{ html: mapHtml, baseUrl: 'https://localhost' }}
         style={styles.map}
         onMessage={handleMessage}
         onError={(syntheticEvent) => {
