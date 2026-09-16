@@ -61,25 +61,21 @@ const mapHtml = `
       };
     }
 
-    var OrigXHR = window.XMLHttpRequest;
-    window.XMLHttpRequest = function () {
-      var xhr = new OrigXHR();
-      var url;
-      var origOpen = xhr.open.bind(xhr);
-      xhr.open = function (method, u) {
-        url = u;
-        return origOpen.apply(xhr, arguments);
-      };
-      xhr.addEventListener('load', function () {
-        logDebug('XHR OK (' + xhr.status + '): ' + url);
+    // window.XMLHttpRequest 자체를 바꿔치기하면 instanceof 체크가 깨질 수 있어서,
+    // 생성자는 그대로 두고 prototype 메서드만 감싼다.
+    var origXhrOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function (method, url) {
+      this.__debugUrl = url;
+      this.addEventListener('load', function () {
+        logDebug('XHR OK (' + this.status + '): ' + this.__debugUrl);
       });
-      xhr.addEventListener('error', function () {
-        logDebug('XHR FAIL: ' + url);
+      this.addEventListener('error', function () {
+        logDebug('XHR FAIL: ' + this.__debugUrl);
       });
-      xhr.addEventListener('timeout', function () {
-        logDebug('XHR TIMEOUT: ' + url);
+      this.addEventListener('timeout', function () {
+        logDebug('XHR TIMEOUT: ' + this.__debugUrl);
       });
-      return xhr;
+      return origXhrOpen.apply(this, arguments);
     };
 
     // window.onerror는 던져진(throw) 에러만 잡는다. 카카오 SDK 내부가 실패한
