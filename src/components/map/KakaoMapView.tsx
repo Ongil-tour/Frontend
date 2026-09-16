@@ -12,25 +12,43 @@ const mapHtml = `
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>
     html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
+    #debug-log {
+      position: absolute; top: 0; left: 0; right: 0; z-index: 99999;
+      max-height: 70%; overflow-y: auto; margin: 0; padding: 6px;
+      background: rgba(0,0,0,0.85); color: #7CFC7C;
+      font-family: monospace; font-size: 11px; white-space: pre-wrap;
+    }
   </style>
   <script>
-    // 카카오 SDK 로드/초기화 실패가 지금까지 그냥 흰 화면으로만 나왔어서,
-    // 어떤 에러든 RN 쪽으로 보고하도록 가장 먼저 등록해둔다.
-    window.onerror = function (message, source, lineno) {
-      if (window.ReactNativeWebView) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'MAP_ERROR',
-          message: String(message) + ' (' + source + ':' + lineno + ')'
-        }));
-      }
-    };
-
-    // USB 없이도 원인을 볼 수 있도록, 실제 네트워크 요청 자체를 가로채서 기록해둔다
-    // (카카오 SDK가 내부적으로 만드는 <script>/fetch/XHR 요청 포함).
+    // RN으로 postMessage가 안 갈 수도 있는 경우까지 대비해서, 화면(웹뷰) 안에
+    // 직접 글자로 로그를 찍는다 - USB/와이파이 연결 없이 폰 화면만 보면 됨.
     window.__mapDebugLog = [];
+    function report(entry) {
+      window.__mapDebugLog.push(entry);
+      var el = document.getElementById('debug-log');
+      if (el) {
+        el.textContent += entry + '\\n';
+        el.scrollTop = el.scrollHeight;
+      }
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'MAP_ERROR', message: entry }));
+      }
+    }
     function logDebug(entry) {
       window.__mapDebugLog.push(entry);
+      var el = document.getElementById('debug-log');
+      if (el) {
+        el.textContent += entry + '\\n';
+        el.scrollTop = el.scrollHeight;
+      }
     }
+    report('SCRIPT STARTED ' + new Date().toISOString());
+
+    // 카카오 SDK 로드/초기화 실패가 지금까지 그냥 흰 화면으로만 나왔어서,
+    // 어떤 에러든 화면에 보고하도록 가장 먼저 등록해둔다.
+    window.onerror = function (message, source, lineno) {
+      report('window.onerror: ' + String(message) + ' (' + source + ':' + lineno + ')');
+    };
 
     var origCreateElement = document.createElement.bind(document);
     document.createElement = function (tagName) {
@@ -82,38 +100,29 @@ const mapHtml = `
     // Promise를 조용히 삼키면(catch 없이) 여기 안 걸리고 그냥 멈춘 것처럼 보이므로
     // unhandledrejection도 같이 잡는다.
     window.addEventListener('unhandledrejection', function (event) {
-      if (window.ReactNativeWebView) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'MAP_ERROR',
-          message: 'Unhandled rejection: ' + (event.reason && event.reason.message ? event.reason.message : String(event.reason))
-        }));
-      }
+      report('unhandledrejection: ' + (event.reason && event.reason.message ? event.reason.message : String(event.reason)));
     });
+    report('handlers registered, loading kakao sdk script...');
     // MAP_READY가 너무 오래 걸리면(네트워크 지연 vs 완전히 멈춤을 구분하기 위해)
     // 일정 시간 후에도 안 끝나면 그 사실 자체를 알려준다.
     window.__mapReadyTimeout = setTimeout(function () {
-      if (window.ReactNativeWebView) {
-        var log = window.__mapDebugLog.length ? window.__mapDebugLog.join('\n') : '(기록된 네트워크 요청 없음)';
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'MAP_ERROR',
-          message: '카카오맵 초기화가 15초 넘게 끝나지 않았습니다.\n\n' + log
-        }));
-      }
+      report('TIMEOUT after 15s. kakao=' + (typeof kakao) + ' kakao.maps=' + (typeof kakao !== 'undefined' && kakao.maps ? 'exists' : 'missing'));
     }, 15000);
   </script>
 </head>
 <body>
+  <pre id="debug-log"></pre>
   <div id="map"></div>
+  <script>document.getElementById('debug-log').textContent += 'BODY STARTED\\n';</script>
   <script
     src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&libraries=services&autoload=false"
-    onerror="window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({type:'MAP_ERROR', message:'카카오맵 SDK 스크립트 로드 실패 (네트워크 또는 앱키 문제)'}))"
+    onload="report('kakao sdk script onload fired')"
+    onerror="report('SCRIPT FAIL: kakao sdk script tag itself failed to load')"
   ></script>
   <script>
+    report('after kakao sdk script tag, typeof kakao=' + (typeof kakao) + ' typeof kakao.maps=' + (typeof kakao !== 'undefined' ? typeof kakao.maps : 'n/a'));
     if (typeof kakao === 'undefined' || !kakao.maps) {
-      window.ReactNativeWebView.postMessage(JSON.stringify({
-        type: 'MAP_ERROR',
-        message: '카카오맵 SDK가 초기화되지 않았습니다 (앱키의 플랫폼 도메인 등록 여부를 확인하세요)'
-      }));
+      report('카카오맵 SDK가 초기화되지 않았습니다 (앱키의 도메인 등록 여부를 확인하세요)');
     }
   </script>
   <script>
@@ -394,7 +403,9 @@ const mapHtml = `
       });
     }
 
+    report('calling kakao.maps.load()...');
     kakao.maps.load(function() {
+      report('kakao.maps.load() callback fired');
       map = new kakao.maps.Map(document.getElementById('map'), {
         center: new kakao.maps.LatLng(37.5665, 126.9780),
         level: 5
@@ -432,7 +443,10 @@ const mapHtml = `
       });
 
       clearTimeout(window.__mapReadyTimeout);
-      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'MAP_READY' }));
+      report('MAP_READY - initialization complete');
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'MAP_READY' }));
+      }
     });
   </script>
 </body>
@@ -554,12 +568,14 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
   loadingOverlay: {
+    // 진단용 온스크린 로그(웹뷰 상단 70%)가 가려지지 않도록, 화면 전체를 덮지
+    // 않고 하단에만 살짝 걸치도록 임시로 바꿔둠. 원인 찾으면 원래대로(전체 덮기) 되돌릴 것.
     position: 'absolute',
-    top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: '#FFFFFF',
+    height: 90,
+    backgroundColor: 'rgba(255,255,255,0.9)',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
