@@ -24,7 +24,12 @@ export default {
         backgroundImage: "./assets/android-icon-background.png",
         monochromeImage: "./assets/android-icon-monochrome.png"
       },
-      predictiveBackGestureEnabled: false
+      predictiveBackGestureEnabled: false,
+      // 카카오맵 SDK가 kakao.maps.load() 내부에서 실제 지도 모듈을
+      // http://t1.daumcdn.net/... (평문 HTTP)로 불러온다. Android 9+ 기본값(차단)
+      // 때문에 지도 초기화가 조용히 멈춰있던 원인 - 우리 백엔드는 HTTPS라 필요
+      // 없다고 지웠었는데, 이 서드파티 SDK 때문에 다시 켜야 함.
+      usesCleartextTraffic: true
     },
     web: {
       favicon: "./assets/favicon.png"
