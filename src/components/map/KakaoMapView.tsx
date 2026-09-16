@@ -35,13 +35,33 @@ const mapHtml = `
         }));
       }
     });
+
+    // kakao.maps.load()가 내부적으로 추가 <script>를 동적으로 넣어서 지도 모듈을
+    // 불러오는데, 그게 실패해도 우리 쪽에서 알 방법이 없었다. 어떤 스크립트가
+    // 만들어지고 성공/실패하는지 기록해서, 타임아웃이 나면 같이 보여준다.
+    window.__mapDebugLog = [];
+    var origCreateElement = document.createElement.bind(document);
+    document.createElement = function (tagName) {
+      var el = origCreateElement(tagName);
+      if (String(tagName).toLowerCase() === 'script') {
+        el.addEventListener('load', function () {
+          window.__mapDebugLog.push('SCRIPT OK: ' + el.src);
+        });
+        el.addEventListener('error', function () {
+          window.__mapDebugLog.push('SCRIPT FAIL: ' + el.src);
+        });
+      }
+      return el;
+    };
+
     // kakao.maps.load()가 너무 오래 걸리면(네트워크 지연 vs 완전히 멈춤을 구분하기
     // 위해) 일정 시간 후에도 안 끝나면 그 사실 자체를 알려준다.
     window.__mapReadyTimeout = setTimeout(function () {
       if (window.ReactNativeWebView) {
+        var log = window.__mapDebugLog.length ? window.__mapDebugLog.join('\n') : '(기록된 동적 스크립트 없음)';
         window.ReactNativeWebView.postMessage(JSON.stringify({
           type: 'MAP_ERROR',
-          message: '카카오맵 초기화가 15초 넘게 끝나지 않았습니다 (네트워크 지연 또는 무한 대기)'
+          message: '카카오맵 초기화가 15초 넘게 끝나지 않았습니다.\n\n' + log
         }));
       }
     }, 15000);
