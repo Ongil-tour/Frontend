@@ -17,9 +17,6 @@ import { useSettingStore } from '../../stores/useSettingStore';
 // 백엔드 GET /map/markers가 받는 카테고리 값 그대로
 const CATEGORIES = ['관광지', '식당', '카페', '숙소', '편의점', '병원'];
 
-// 백엔드 GET /facilities/nearby가 허용하는 반경(km)과 동일
-const RADIUS_OPTIONS = [1, 3, 5];
-
 const RESULT_LABELS: Record<string, string> = {
   SEARCH: '검색결과',
 };
@@ -32,8 +29,7 @@ export default function MapScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [places, setPlaces] = useState<KakaoPlace[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
-  const [selectedRadiusKm, setSelectedRadiusKm] = useState<number | null>(null);
-  const { location: userLocation, getCurrentLocation } = useCurrentLocation();
+  const { getCurrentLocation } = useCurrentLocation();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Map'>>();
   const { isDark } = useSettingStore();
 
@@ -66,28 +62,7 @@ export default function MapScreen() {
   };
 
   const handleCategoryPress = (category: string) => {
-    const origin =
-      selectedRadiusKm != null && userLocation
-        ? { lat: userLocation.lat, lng: userLocation.lng, radiusM: selectedRadiusKm * 1000 }
-        : undefined;
-    runCategorySearch(category, origin);
-  };
-
-  const handleRadiusPress = async (km: number) => {
-    if (selectedRadiusKm === km) {
-      setSelectedRadiusKm(null);
-      return;
-    }
-    const coords = await getCurrentLocation();
-    if (!coords) {
-      Alert.alert('위치 확인 실패', '위치 권한과 위치 서비스(GPS) 설정을 확인해주세요.');
-      return;
-    }
-    setSelectedRadiusKm(km);
-    mapRef.current?.showRadiusCircle(coords.lat, coords.lng, km * 1000);
-    if (selectedCategory) {
-      runCategorySearch(selectedCategory, { lat: coords.lat, lng: coords.lng, radiusM: km * 1000 });
-    }
+    runCategorySearch(category);
   };
 
   const handleSearchSubmit = () => {
@@ -153,29 +128,6 @@ export default function MapScreen() {
       </View>
       <View style={styles.mapContainer}>
         <KakaoMapView ref={mapRef} onMessage={handleMessage} />
-        <View style={styles.radiusOverlay}>
-          {RADIUS_OPTIONS.map((km) => (
-            <TouchableOpacity
-              key={km}
-              style={[
-                styles.radiusButton,
-                { backgroundColor: colors.surface },
-                selectedRadiusKm === km && styles.radiusButtonActive,
-              ]}
-              onPress={() => handleRadiusPress(km)}
-            >
-              <Text
-                style={[
-                  styles.radiusText,
-                  { color: colors.text },
-                  selectedRadiusKm === km && styles.radiusTextActive,
-                ]}
-              >
-                {km}km
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
         <View style={[styles.zoomControls, { backgroundColor: colors.surface }]}>
           <TouchableOpacity style={styles.zoomButton} onPress={() => mapRef.current?.zoomIn()}>
             <Text style={[styles.zoomButtonText, { color: colors.text }]}>+</Text>
@@ -248,32 +200,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   categoryTextActive: {
-    color: 'white',
-  },
-  radiusOverlay: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    flexDirection: 'row',
-    gap: 8,
-  },
-  radiusButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  radiusButtonActive: {
-    backgroundColor: GREEN.primary,
-  },
-  radiusText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  radiusTextActive: {
     color: 'white',
   },
   mapContainer: { flex: 1 },

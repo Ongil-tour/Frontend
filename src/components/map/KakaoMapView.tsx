@@ -235,34 +235,6 @@ const mapHtml = `
       map.setCenter(position);
     }
 
-    var radiusCircle = null;
-    var radiusCircleTimeout = null;
-
-    function showRadiusCircle(lat, lng, radiusM) {
-      if (radiusCircle) {
-        radiusCircle.setMap(null);
-      }
-      if (radiusCircleTimeout) {
-        clearTimeout(radiusCircleTimeout);
-      }
-      radiusCircle = new kakao.maps.Circle({
-        center: new kakao.maps.LatLng(lat, lng),
-        radius: radiusM,
-        strokeWeight: 1,
-        strokeColor: '#22A45D',
-        strokeOpacity: 0.5,
-        fillColor: '#22A45D',
-        fillOpacity: 0.15
-      });
-      radiusCircle.setMap(map);
-      radiusCircleTimeout = setTimeout(function() {
-        if (radiusCircle) {
-          radiusCircle.setMap(null);
-          radiusCircle = null;
-        }
-      }, 2500);
-    }
-
     // 지도 클릭당 카테고리 수만큼 API 호출이 나가므로, 이 앱과 관련 없거나
     // (학원/부동산처럼) 밀집도가 높아 엉뚱한 최근접 결과를 만드는 카테고리는 뺐다.
     var CLICK_CATEGORY_CODES = [
@@ -393,7 +365,6 @@ export interface KakaoMapViewHandle {
   zoomIn: () => void;
   zoomOut: () => void;
   showCurrentLocation: (lat: number, lng: number) => void;
-  showRadiusCircle: (lat: number, lng: number, radiusM: number) => void;
 }
 
 interface Props {
@@ -456,9 +427,6 @@ function KakaoMapView({ onMessage }: Props, ref: React.Ref<KakaoMapViewHandle>) 
     },
     showCurrentLocation: (lat: number, lng: number) => {
       runCommand(`showCurrentLocation(${lat}, ${lng}); true;`);
-    },
-    showRadiusCircle: (lat: number, lng: number, radiusM: number) => {
-      runCommand(`showRadiusCircle(${lat}, ${lng}, ${radiusM}); true;`);
     },
   }));
 
