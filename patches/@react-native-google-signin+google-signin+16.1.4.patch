@@ -1,0 +1,14 @@
+diff --git a/node_modules/@react-native-google-signin/google-signin/package.json b/node_modules/@react-native-google-signin/google-signin/package.json
+index 78364cd..d0aa3cd 100644
+--- a/node_modules/@react-native-google-signin/google-signin/package.json
++++ b/node_modules/@react-native-google-signin/google-signin/package.json
+@@ -148,6 +148,9 @@
+     "ios": {
+       "componentProvider": {
+         "RNGoogleSignInButton": "RNGoogleSignInButtonComponentView"
++      },
++      "modulesProvider": {
++        "RNGoogleSignin": "RNGoogleSignin"
+       }
+     }
+   },

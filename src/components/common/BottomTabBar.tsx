@@ -1,6 +1,8 @@
 import React from "react";
 import { useNavigation } from "@react-navigation/native";
-import { useSettingStore } from "../store/settingStore";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSettingStore } from "../../stores/useSettingStore";
+import { GREEN, DARK } from "../../constants/colors";
 import {
   View,
   Text,
@@ -12,22 +14,32 @@ type TabName = "explore" | "storage" | "mypage";
 
 interface BottomTabBarProps {
   activeTab: TabName;
+  hidden?: boolean;
 }
 
 export default function BottomTabBar({
   activeTab,
+  hidden = false,
 }: BottomTabBarProps) {
   const navigation = useNavigation<any>();
   const { isDark, fontSize } = useSettingStore();
+  const insets = useSafeAreaInsets();
 
   const colors = {
-    background: isDark ? "#222222" : "#FFFFFF",
-    border: isDark ? "#555555" : "#DDDDDD",
-    text: isDark ? "#FFFFFF" : "#000000",
-    subText: isDark ? "#BDBDBD" : "#808080",
+    background: isDark ? DARK.background : GREEN.screenBg,
+    border: isDark ? DARK.border : GREEN.border,
+    active: isDark ? DARK.text : GREEN.primary,
+    subText: isDark ? DARK.subText : "#8FA89A",
   };
 
   const goToTab = (tab: TabName) => {
+    if (tab === activeTab) return;
+
+    if (tab === "explore") {
+      navigation.navigate("Map");
+      return;
+    }
+
     if (tab === "storage") {
       navigation.navigate("PlaceStorage");
       return;
@@ -37,29 +49,33 @@ export default function BottomTabBar({
       navigation.navigate("MyPage");
       return;
     }
-
-    // 탐색은 지금 연결하지 않음
   };
 
   return (
     <View
+      pointerEvents={hidden ? 'none' : 'auto'}
       style={[
         styles.container,
         {
           backgroundColor: colors.background,
           borderColor: colors.border,
+          paddingBottom: 10 + insets.bottom,
+          opacity: hidden ? 0 : 1,
         },
       ]}
     >
       {/* 탐색 */}
-      <TouchableOpacity style={styles.tabItem}>
+      <TouchableOpacity
+        style={styles.tabItem}
+        onPress={() => goToTab("explore")}
+      >
         <Text
           style={[
             styles.tabText,
             {
               color:
                 activeTab === "explore"
-                  ? colors.text
+                  ? colors.active
                   : colors.subText,
               fontSize,
               fontWeight:
@@ -82,7 +98,7 @@ export default function BottomTabBar({
             {
               color:
                 activeTab === "storage"
-                  ? colors.text
+                  ? colors.active
                   : colors.subText,
               fontSize,
               fontWeight:
@@ -105,7 +121,7 @@ export default function BottomTabBar({
             {
               color:
                 activeTab === "mypage"
-                  ? colors.text
+                  ? colors.active
                   : colors.subText,
               fontSize,
               fontWeight:
@@ -122,24 +138,16 @@ export default function BottomTabBar({
 
 const styles = StyleSheet.create({
   container: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-
-    height: 65,
-
     borderTopWidth: 1,
 
     flexDirection: "row",
     alignItems: "center",
 
-    zIndex: 999,
+    paddingTop: 10,
   },
 
   tabItem: {
     flex: 1,
-    height: "100%",
     alignItems: "center",
     justifyContent: "center",
   },
