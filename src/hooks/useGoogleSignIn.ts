@@ -30,5 +30,18 @@ export function useGoogleSignIn() {
     return response.data.idToken;
   }, []);
 
-  return { signIn };
+  // 로그아웃/회원탈퇴 시 우리 앱 세션만 지우고 기기에 남은 구글 로그인 상태는
+  // 그대로 둬서, 다음에 "Google로 계속하기"를 누르면 계정 선택 창 없이 같은
+  // 계정으로 바로 재로그인(= 탈퇴 직후 자동 재가입)되던 문제. 실패해도
+  // 로그아웃 자체를 막으면 안 되므로 항상 조용히 넘어간다.
+  const signOut = useCallback(async () => {
+    try {
+      const { GoogleSignin } = require('@react-native-google-signin/google-signin');
+      await GoogleSignin.signOut();
+    } catch {
+      // 네이티브 모듈 초기화 실패 등 - 로그아웃 흐름을 막지 않는다.
+    }
+  }, []);
+
+  return { signIn, signOut };
 }
