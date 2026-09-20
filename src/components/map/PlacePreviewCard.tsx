@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Linking, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { KakaoPlace } from '../../types/place';
@@ -23,6 +23,14 @@ const PlacePreviewCard = forwardRef<BottomSheet, Props>(({ place, onDetailPress,
     const webUrl = place.id
       ? `https://m.map.kakao.com/scheme/place?id=${place.id}`
       : `https://m.map.kakao.com/scheme/look?p=${place.lat},${place.lng}`;
+
+    // 웹은 kakaomap:// 커스텀 스킴을 처리할 앱이 없으면 window.open이 조용히 아무 일도
+    // 안 하고 끝난다(에러도 안 남). react-native-web의 Linking.canOpenURL은 뭘 넣어도
+    // 항상 true를 반환해서 이 분기로는 못 걸러내므로, 웹에서는 아예 https 버전으로 보낸다.
+    if (Platform.OS === 'web') {
+      Linking.openURL(webUrl);
+      return;
+    }
 
     Linking.canOpenURL(appUrl)
       .then((supported) => Linking.openURL(supported ? appUrl : webUrl))
